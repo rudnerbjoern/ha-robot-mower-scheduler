@@ -19,7 +19,8 @@ blueprint:
     5. Applies new-integration number/select/switch entities before each mow.
     6. Checks rain at session start, during mowing, and before Zone B.
     7. Checks an optional temperature sensor before starting Zone A and Zone B.
-    8. Keeps the 6-hour wet-lawn dry-out delay.
+    8. Optionally raises blade height during hot weather based on the temperature sensor.
+    9. Keeps the 6-hour wet-lawn dry-out delay.
     9. Uses time-left based completion plus a 3-minute grace delay before docking.
     10. Enforces an optional minimum time between successful mowing runs.
     11. Guards against interrupting a recent low-battery unfinished-task resume
@@ -609,7 +610,45 @@ blueprint:
               domain: number
         mammotion_blade_height:
           name: Blade Height (mm)
+          description: Normal blade height used when hot-weather blade height is disabled or not active.
           default: 100
+          selector:
+            number:
+              min: 20
+              max: 100
+              step: 1
+              unit_of_measurement: mm
+              mode: slider
+
+        hot_weather_blade_height_enabled:
+          name: Hot Weather Blade Height Enabled
+          description: >
+            If enabled, the scheduler uses the configured hot-weather blade height
+            when the configured temperature sensor reports a value at or above the
+            hot-weather threshold. If no temperature sensor is configured, the normal
+            blade height is used.
+          default: false
+          selector:
+            boolean: {}
+
+        hot_weather_blade_height_temperature:
+          name: Hot Weather Blade Height Temperature
+          description: >
+            Temperature threshold for using the hot-weather blade height.
+            The temperature sensor from Weather & Rain is used.
+          default: 26
+          selector:
+            number:
+              min: 15
+              max: 40
+              step: 0.5
+              unit_of_measurement: "°C"
+              mode: slider
+
+        mammotion_hot_weather_blade_height:
+          name: Hot Weather Blade Height (mm)
+          description: Blade height used when hot-weather blade height is active.
+          default: 80
           selector:
             number:
               min: 20
@@ -1036,6 +1075,9 @@ variables:
   days_session_4: !input days_session_4
   blade_height_number_entity: !input blade_height_number_entity
   mammotion_blade_height: !input mammotion_blade_height
+  hot_weather_blade_height_enabled: !input hot_weather_blade_height_enabled
+  hot_weather_blade_height_temperature: !input hot_weather_blade_height_temperature
+  mammotion_hot_weather_blade_height: !input mammotion_hot_weather_blade_height
   working_speed_number_entity: !input working_speed_number_entity
   mammotion_working_speed: !input mammotion_working_speed
   cutting_path_angle_number_entity: !input cutting_path_angle_number_entity
@@ -1421,6 +1463,7 @@ action:
                 Wettervorhersage: {{ states(weather_entity) }}.
                 Temperatur: {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
                 Maximale Starttemperatur: {{ max_start_temperature }} °C.
+                Schnitthöhe: {% set temp_entity = temperature_sensor | string | trim %}{% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}{% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}{{ mammotion_hot_weather_blade_height }} mm (Hitze-Schnitthöhe aktiv ab {{ hot_weather_blade_height_temperature }} °C){% else %}{{ mammotion_blade_height }} mm{% endif %}.
                 Akkustand: {{ states(mower_battery_level_sensor) if mower_battery_level_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} %.
                 Mindest-Akkustand vor Start: {{ minimum_battery_before_start }} %.
                 Mindestabstand zwischen Mähvorgängen: {{ minimum_time_between_mows }} Stunden.
@@ -1438,6 +1481,7 @@ action:
         Wettervorhersage: {{ states(weather_entity) }}.
         Temperatur: {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
         Maximale Starttemperatur: {{ max_start_temperature }} °C.
+        Schnitthöhe: {% set temp_entity = temperature_sensor | string | trim %}{% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}{% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}{{ mammotion_hot_weather_blade_height }} mm (Hitze-Schnitthöhe aktiv ab {{ hot_weather_blade_height_temperature }} °C){% else %}{{ mammotion_blade_height }} mm{% endif %}.
         Akkustand: {{ states(mower_battery_level_sensor) if mower_battery_level_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} %.
         Mindest-Akkustand vor Start: {{ minimum_battery_before_start }} %.
 
@@ -1466,14 +1510,27 @@ action:
             value_template: >
               {% set e = blade_height_number_entity | string | trim %}
               {% set current = states(e) | float(none) if e | length > 0 else none %}
-              {% set desired = mammotion_blade_height | float %}
+              {% set temp_entity = temperature_sensor | string | trim %}
+              {% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}
+              {% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}
+                {% set desired = mammotion_hot_weather_blade_height | float %}
+              {% else %}
+                {% set desired = mammotion_blade_height | float %}
+              {% endif %}
               {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
         sequence:
           - service: number.set_value
             target:
               entity_id: "{{ blade_height_number_entity }}"
             data:
-              value: "{{ mammotion_blade_height | int }}"
+              value: >
+                {% set temp_entity = temperature_sensor | string | trim %}
+                {% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}
+                {% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}
+                  {{ mammotion_hot_weather_blade_height | int }}
+                {% else %}
+                  {{ mammotion_blade_height | int }}
+                {% endif %}
             continue_on_error: true
   - alias: "Set working speed before Zone A"
     choose:
@@ -2038,14 +2095,27 @@ action:
                             value_template: >
                               {% set e = blade_height_number_entity | string | trim %}
                               {% set current = states(e) | float(none) if e | length > 0 else none %}
-                              {% set desired = mammotion_blade_height | float %}
+                              {% set temp_entity = temperature_sensor | string | trim %}
+                              {% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}
+                              {% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}
+                                {% set desired = mammotion_hot_weather_blade_height | float %}
+                              {% else %}
+                                {% set desired = mammotion_blade_height | float %}
+                              {% endif %}
                               {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
                         sequence:
                           - service: number.set_value
                             target:
                               entity_id: "{{ blade_height_number_entity }}"
                             data:
-                              value: "{{ mammotion_blade_height | int }}"
+                              value: >
+                                {% set temp_entity = temperature_sensor | string | trim %}
+                                {% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}
+                                {% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}
+                                  {{ mammotion_hot_weather_blade_height | int }}
+                                {% else %}
+                                  {{ mammotion_blade_height | int }}
+                                {% endif %}
                             continue_on_error: true
                   - alias: "Set working speed before Zone B"
                     choose:
