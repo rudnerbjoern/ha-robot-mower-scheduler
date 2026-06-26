@@ -805,11 +805,40 @@ blueprint:
           name: Wildlife Safety Sun Schedule Enabled
           description: >
             If enabled, Wildlife Safety is automatically set to low_speed_mowing
-            at sunset and off at sunrise. In this mode, the normal mow-start
-            setting for Wildlife Safety is not applied before Zone A or Zone B.
+            around sunset and off around sunrise. The exact timing can be adjusted
+            with the sunset and sunrise offset sliders. In this mode, the normal
+            mow-start setting for Wildlife Safety is not applied before Zone A or Zone B.
           default: true
           selector:
             boolean: {}
+
+        wildlife_safety_sunset_offset_minutes:
+          name: Wildlife Safety Sunset Offset
+          description: >
+            Offset in minutes relative to sunset. Negative values run before sunset,
+            positive values run after sunset. Example: -30 means 30 minutes before sunset.
+          default: 0
+          selector:
+            number:
+              min: -60
+              max: 60
+              step: 5
+              unit_of_measurement: min
+              mode: slider
+
+        wildlife_safety_sunrise_offset_minutes:
+          name: Wildlife Safety Sunrise Offset
+          description: >
+            Offset in minutes relative to sunrise. Negative values run before sunrise,
+            positive values run after sunrise. Example: 30 means 30 minutes after sunrise.
+          default: 0
+          selector:
+            number:
+              min: -60
+              max: 60
+              step: 5
+              unit_of_measurement: min
+              mode: slider
 
         wildlife_safety_option:
           name: Wildlife Safety Option Before Mowing
@@ -863,12 +892,9 @@ trigger:
   - platform: state
     entity_id: !input manual_start_button
     id: manual_start
-  - platform: sun
-    event: sunset
-    id: wildlife_sunset
-  - platform: sun
-    event: sunrise
-    id: wildlife_sunrise
+  - platform: time_pattern
+    minutes: "/1"
+    id: wildlife_sun_check
 
 mode: single
 max_exceeded: silent
@@ -946,28 +972,46 @@ variables:
   turnaround_mode_option: !input turnaround_mode_option
   wildlife_safety_select_entity: !input wildlife_safety_select_entity
   wildlife_safety_sun_schedule_enabled: !input wildlife_safety_sun_schedule_enabled
+  wildlife_safety_sunset_offset_minutes: !input wildlife_safety_sunset_offset_minutes
+  wildlife_safety_sunrise_offset_minutes: !input wildlife_safety_sunrise_offset_minutes
   wildlife_safety_option: !input wildlife_safety_option
   night_light_switch_entity: !input night_light_switch_entity
   rain_detection_during_mow_switch_entity: !input rain_detection_during_mow_switch_entity
   rain_detection_mower_switch_entity: !input rain_detection_mower_switch_entity
 
 condition:
-  - alias: "Skip mowing sessions if manual skip toggle is on; allow wildlife sun schedule triggers"
+  - alias: "Skip mowing sessions if manual skip toggle is on; allow wildlife sun schedule checks"
     condition: template
     value_template: >
-      {{ trigger.id in ['wildlife_sunset', 'wildlife_sunrise'] or not is_state(skip_toggle, 'on') }}
+      {{ trigger.id == 'wildlife_sun_check' or not is_state(skip_toggle, 'on') }}
 
 action:
   - choose:
       - conditions:
           - condition: template
-            alias: "Set Wildlife Safety to low_speed_mowing at sunset"
+            alias: "Set Wildlife Safety to low_speed_mowing based on sunset offset"
             value_template: >
-              {{
-                trigger.id == 'wildlife_sunset'
-                and (wildlife_safety_sun_schedule_enabled | bool)
-                and (wildlife_safety_select_entity | string | trim | length > 0)
-              }}
+              {% set e = wildlife_safety_select_entity | string | trim %}
+              {% set enabled = wildlife_safety_sun_schedule_enabled | bool %}
+              {% set offset = wildlife_safety_sunset_offset_minutes | int(0) %}
+              {% set next_setting = as_timestamp(state_attr('sun.sun', 'next_setting'), none) %}
+              {% set now_ts = as_timestamp(now()) %}
+              {% if next_setting is none %}
+                false
+              {% else %}
+                {% set target_ts = next_setting + (offset * 60) %}
+                {% set previous_target_ts = (next_setting - 86400) + (offset * 60) %}
+                {{
+                  trigger.id == 'wildlife_sun_check'
+                  and enabled
+                  and e | length > 0
+                  and states(e) != 'low_speed_mowing'
+                  and (
+                    (now_ts >= target_ts and now_ts < target_ts + 300)
+                    or (now_ts >= previous_target_ts and now_ts < previous_target_ts + 300)
+                  )
+                }}
+              {% endif %}
         sequence:
           - service: select.select_option
             target:
@@ -977,20 +1021,39 @@ action:
             continue_on_error: true
           - service: notify.persistent_notification
             data:
-              title: "🦔 {{ mower_display_name }} Wildlife-Schutz aktiviert"
+              title: "🦔 {{ mower_display_name }} Wildtierschutz aktiviert"
               message: >
-                Sonnenuntergang erkannt. Der Wildlife-Schutz wurde auf low_speed_mowing gesetzt.
-          - stop: "Wildlife-Schutz bei Sonnenuntergang auf low_speed_mowing gesetzt"
+                Der Sonnenuntergang-Zeitpunkt wurde erreicht. Wildlife Safety wurde auf
+                low_speed_mowing gesetzt.
+
+                Offset: {{ wildlife_safety_sunset_offset_minutes }} Minuten.
+          - stop: "Wildtierschutz bei Sonnenuntergang aktiviert"
 
       - conditions:
           - condition: template
-            alias: "Set Wildlife Safety to off at sunrise"
+            alias: "Set Wildlife Safety to off based on sunrise offset"
             value_template: >
-              {{
-                trigger.id == 'wildlife_sunrise'
-                and (wildlife_safety_sun_schedule_enabled | bool)
-                and (wildlife_safety_select_entity | string | trim | length > 0)
-              }}
+              {% set e = wildlife_safety_select_entity | string | trim %}
+              {% set enabled = wildlife_safety_sun_schedule_enabled | bool %}
+              {% set offset = wildlife_safety_sunrise_offset_minutes | int(0) %}
+              {% set next_rising = as_timestamp(state_attr('sun.sun', 'next_rising'), none) %}
+              {% set now_ts = as_timestamp(now()) %}
+              {% if next_rising is none %}
+                false
+              {% else %}
+                {% set target_ts = next_rising + (offset * 60) %}
+                {% set previous_target_ts = (next_rising - 86400) + (offset * 60) %}
+                {{
+                  trigger.id == 'wildlife_sun_check'
+                  and enabled
+                  and e | length > 0
+                  and states(e) != 'off'
+                  and (
+                    (now_ts >= target_ts and now_ts < target_ts + 300)
+                    or (now_ts >= previous_target_ts and now_ts < previous_target_ts + 300)
+                  )
+                }}
+              {% endif %}
         sequence:
           - service: select.select_option
             target:
@@ -1000,24 +1063,19 @@ action:
             continue_on_error: true
           - service: notify.persistent_notification
             data:
-              title: "☀️ {{ mower_display_name }} Wildlife-Schutz deaktiviert"
+              title: "☀️ {{ mower_display_name }} Wildtierschutz deaktiviert"
               message: >
-                Sonnenaufgang erkannt. Der Wildlife-Schutz wurde auf off gesetzt.
-          - stop: "Wildlife-Schutz bei Sonnenaufgang auf off gesetzt"
+                Der Sonnenaufgang-Zeitpunkt wurde erreicht. Wildlife Safety wurde auf off gesetzt.
+
+                Offset: {{ wildlife_safety_sunrise_offset_minutes }} Minuten.
+          - stop: "Wildtierschutz bei Sonnenaufgang deaktiviert"
 
       - conditions:
           - condition: template
-            alias: "Stop unused Wildlife Safety sun trigger"
-            value_template: >
-              {{
-                trigger.id in ['wildlife_sunset', 'wildlife_sunrise']
-                and (
-                  not (wildlife_safety_sun_schedule_enabled | bool)
-                  or (wildlife_safety_select_entity | string | trim | length == 0)
-                )
-              }}
+            alias: "Stop regular wildlife sun check without change"
+            value_template: "{{ trigger.id == 'wildlife_sun_check' }}"
         sequence:
-          - stop: "Wildlife-Sonnenplan deaktiviert oder Entity nicht konfiguriert"
+          - stop: "Regelmäßiger Wildtierschutz-Check ohne Änderung beendet"
   - variables:
       zone_mod: "{{ active_zone_count | int(6) }}"
       current_zone: "{{ states(zone_tracker) | int(0) }}"
