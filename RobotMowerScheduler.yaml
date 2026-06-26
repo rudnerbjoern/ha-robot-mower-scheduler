@@ -20,7 +20,7 @@ blueprint:
     6. Checks rain at session start, during mowing, and before Zone B.
     7. Checks an optional temperature sensor before starting Zone A and Zone B.
     8. Optionally raises blade height during hot weather based on the temperature sensor.
-    9. Keeps the 6-hour wet-lawn dry-out delay.
+    9. Supports a configurable wet-lawn dry-out delay after rain.
     9. Uses time-left based completion plus a 3-minute grace delay before docking.
     10. Enforces an optional minimum time between successful mowing runs.
     11. Guards against interrupting a recent low-battery unfinished-task resume
@@ -354,6 +354,21 @@ blueprint:
               max: 45
               step: 0.5
               unit_of_measurement: "°C"
+              mode: slider
+
+        wet_lawn_dry_out_delay_hours:
+          name: Wet Lawn Dry-Out Delay
+          description: >
+            Dry-out delay in hours after rain was detected. During this time,
+            scheduled and manual mowing starts are skipped. Set to 0 to disable
+            the dry-out delay after rain.
+          default: 6
+          selector:
+            number:
+              min: 0
+              max: 24
+              step: 1
+              unit_of_measurement: h
               mode: slider
 
     session_1_section:
@@ -1047,6 +1062,7 @@ variables:
   weather_entity: !input weather_entity
   temperature_sensor: !input temperature_sensor
   max_start_temperature: !input max_start_temperature
+  wet_lawn_dry_out_delay_hours: !input wet_lawn_dry_out_delay_hours
   zone_tracker: !input zone_tracker
   skip_toggle: !input skip_toggle
   rain_last_seen: !input rain_last_seen
@@ -1244,6 +1260,7 @@ action:
         {% else %}
           86400
         {% endif %}
+      wet_lawn_dry_out_seconds: "{{ wet_lawn_dry_out_delay_hours | int(6) * 3600 }}"
       secs_since_last_run: >
         {% set lr = states(last_run_tracker) %}
         {% set lr_ts = as_timestamp(lr, none) %}
@@ -1293,21 +1310,26 @@ action:
               title: "🌧️ {{ mower_display_name }} Sitzung übersprungen — Regen"
               message: >
                 {{ trigger.id }} übersprungen: Die Wettervorhersage meldet {{ states(weather_entity) }}.
-                Nach dem Ende des Regens gilt eine 6-stündige Trocknungszeit.
+                {% if wet_lawn_dry_out_delay_hours | int(6) > 0 %}
+                Nach dem Ende des Regens gilt eine Trocknungszeit von {{ wet_lawn_dry_out_delay_hours }} Stunden.
+                {% else %}
+                Es ist keine zusätzliche Trocknungszeit nach Regen konfiguriert.
+                {% endif %}
           - stop: "Aktuell Regen — Sitzung übersprungen"
 
   - choose:
       - conditions:
           - condition: template
-            value_template: "{{ secs_since_rain | int < 21600 }}"
+            value_template: "{{ wet_lawn_dry_out_seconds | int > 0 and secs_since_rain | int < wet_lawn_dry_out_seconds | int }}"
         sequence:
           - service: notify.persistent_notification
             data:
               title: "💧 {{ mower_display_name }} Sitzung übersprungen — Trocknungszeit aktiv"
               message: >
-                {{ trigger.id }} übersprungen: Der Rasen befindet sich noch in der 6-stündigen Trocknungszeit.
+                {{ trigger.id }} übersprungen: Der Rasen befindet sich noch in der konfigurierten Trocknungszeit.
+                Konfigurierte Trocknungszeit: {{ wet_lawn_dry_out_delay_hours }} Stunden.
                 Regen wurde zuletzt vor {{ (secs_since_rain | int / 3600) | round(1) }} Stunden erkannt.
-                Es verbleiben {{ ((21600 - secs_since_rain | int) / 60) | int }} Minuten, bevor wieder gemäht werden darf.
+                Es verbleiben {{ (((wet_lawn_dry_out_seconds | int) - (secs_since_rain | int)) / 60) | round(0, 'ceil') | int }} Minuten, bevor wieder gemäht werden darf.
           - stop: "Trocknungszeit aktiv — Sitzung übersprungen"
 
   - choose:
@@ -1957,7 +1979,7 @@ action:
               message: >
                 Während des Mähens von {{ zone_a_name }} wurde Regen erkannt. Der Mäher wurde zur Ladestation geschickt.
                 Zonenzähler bleibt bei {{ current_zone }}.
-                Die 6-stündige Trocknungszeit ist jetzt aktiv.
+                Trocknungszeit nach Regen: {{ wet_lawn_dry_out_delay_hours }} Stunden.
 
   - choose:
       - conditions:
@@ -1987,7 +2009,7 @@ action:
                         Vor Zone B wurde Regen erkannt. {{ zone_b_name }} wird übersprungen.
                         Wettervorhersage: {{ states(weather_entity) }}.
                         Zonenzähler bleibt bei {{ zone_a }}.
-                        Die 6-stündige Trocknungszeit ist jetzt aktiv.
+                        Trocknungszeit nach Regen: {{ wet_lawn_dry_out_delay_hours }} Stunden.
                   - stop: "Regen vor Zone B erkannt"
 
           - choose:
@@ -2542,4 +2564,4 @@ action:
                               message: >
                                 Während des Mähens von {{ zone_b_name }} wurde Regen erkannt. Der Mäher wurde zur Ladestation geschickt.
                                 Zonenzähler bleibt bei {{ zone_a }}.
-                                Die 6-stündige Trocknungszeit ist jetzt aktiv.
+                                Trocknungszeit nach Regen: {{ wet_lawn_dry_out_delay_hours }} Stunden.
