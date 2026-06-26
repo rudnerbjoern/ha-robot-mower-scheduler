@@ -514,6 +514,16 @@ blueprint:
           selector:
             entity:
               domain: input_boolean
+        garden_in_use_toggle:
+          name: Garden In Use Toggle (input_boolean)
+          description: >
+            Optional input_boolean helper. When this helper is on, mowing sessions
+            are skipped because the garden is currently being used. Wildlife Safety
+            sun schedule checks are not affected.
+          default: ""
+          selector:
+            entity:
+              domain: input_boolean
         last_run_tracker:
           name: Last Run Datetime (input_datetime)
           default: ""
@@ -1065,6 +1075,7 @@ variables:
   wet_lawn_dry_out_delay_hours: !input wet_lawn_dry_out_delay_hours
   zone_tracker: !input zone_tracker
   skip_toggle: !input skip_toggle
+  garden_in_use_toggle: !input garden_in_use_toggle
   rain_last_seen: !input rain_last_seen
   zones_per_session: !input zones_per_session
   zone_duration: !input zone_duration
@@ -1273,6 +1284,25 @@ action:
   - condition: template
     alias: "Skip scheduled session if today is not active; manual starts bypass only this day gate"
     value_template: "{{ trigger.id == 'manual_start' or today_dow in allowed_days }}"
+
+  - choose:
+      - conditions:
+          - condition: template
+            alias: "Skip if garden is currently in use"
+            value_template: >
+              {% set e = garden_in_use_toggle | string | trim %}
+              {{ e | length > 0 and is_state(e, 'on') }}
+        sequence:
+          - service: notify.persistent_notification
+            data:
+              title: "🏡 {{ mower_display_name }} Mähvorgang übersprungen — Garten wird genutzt"
+              message: >
+                {{ trigger.id }} wurde übersprungen, weil der Sperrschalter
+                "Garten wird genutzt" aktiv ist.
+
+                Es wurden keine Zonenschalter geändert, keine Mäher-Einstellungen gesetzt
+                und der Mäher wurde nicht gestartet.
+          - stop: "Garten wird genutzt — Mähvorgang übersprungen"
 
   - choose:
       - conditions:
@@ -1989,6 +2019,24 @@ action:
           - alias: "Rest period between Zone A and Zone B"
             delay:
               minutes: "{{ inter_zone_rest | int }}"
+
+          - choose:
+              - conditions:
+                  - condition: template
+                    alias: "Skip Zone B if garden is currently in use"
+                    value_template: >
+                      {% set e = garden_in_use_toggle | string | trim %}
+                      {{ e | length > 0 and is_state(e, 'on') }}
+                sequence:
+                  - service: notify.persistent_notification
+                    data:
+                      title: "🏡 {{ mower_display_name }} Zone B übersprungen — Garten wird genutzt"
+                      message: >
+                        Zone B wurde vor dem Start von {{ zone_b_name }} übersprungen,
+                        weil der Sperrschalter "Garten wird genutzt" aktiv ist.
+
+                        Der Zonenzähler bleibt bei {{ zone_a }}.
+                  - stop: "Garten wird genutzt — Zone B übersprungen"
 
           - choose:
               - conditions:
