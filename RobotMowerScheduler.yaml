@@ -231,6 +231,9 @@ blueprint:
       input:
         zone_1_switch:
           name: "Zone 1 — Area Switch"
+          description: >
+            Mammotion area switch for zone 1. This switch is enabled when zone 1 is selected for
+            mowing.
           default: ""
           selector:
             entity:
@@ -239,6 +242,9 @@ blueprint:
 
         zone_2_switch:
           name: "Zone 2 — Area Switch"
+          description: >
+            Mammotion area switch for zone 2. This switch is enabled when zone 2 is selected for
+            mowing.
           default: ""
           selector:
             entity:
@@ -247,6 +253,9 @@ blueprint:
 
         zone_3_switch:
           name: "Zone 3 — Area Switch"
+          description: >
+            Mammotion area switch for zone 3. This switch is enabled when zone 3 is selected for
+            mowing.
           default: ""
           selector:
             entity:
@@ -255,6 +264,9 @@ blueprint:
 
         zone_4_switch:
           name: "Zone 4 — Area Switch"
+          description: >
+            Mammotion area switch for zone 4. This switch is enabled when zone 4 is selected for
+            mowing.
           default: ""
           selector:
             entity:
@@ -263,6 +275,9 @@ blueprint:
 
         zone_5_switch:
           name: "Zone 5 — Area Switch"
+          description: >
+            Mammotion area switch for zone 5. This switch is enabled when zone 5 is selected for
+            mowing.
           default: ""
           selector:
             entity:
@@ -271,6 +286,9 @@ blueprint:
 
         zone_6_switch:
           name: "Zone 6 — Area Switch"
+          description: >
+            Mammotion area switch for zone 6. This switch is enabled when zone 6 is selected for
+            mowing.
           default: ""
           selector:
             entity:
@@ -284,36 +302,48 @@ blueprint:
       input:
         zone_1_name:
           name: "Zone 1 — Display Name"
+          description: >
+            Display name used in notifications for zone 1.
           default: "Zone 1"
           selector:
             text: {}
 
         zone_2_name:
           name: "Zone 2 — Display Name"
+          description: >
+            Display name used in notifications for zone 2.
           default: "Zone 2"
           selector:
             text: {}
 
         zone_3_name:
           name: "Zone 3 — Display Name"
+          description: >
+            Display name used in notifications for zone 3.
           default: "Zone 3"
           selector:
             text: {}
 
         zone_4_name:
           name: "Zone 4 — Display Name"
+          description: >
+            Display name used in notifications for zone 4.
           default: "Zone 4"
           selector:
             text: {}
 
         zone_5_name:
           name: "Zone 5 — Display Name"
+          description: >
+            Display name used in notifications for zone 5.
           default: "Zone 5"
           selector:
             text: {}
 
         zone_6_name:
           name: "Zone 6 — Display Name"
+          description: >
+            Display name used in notifications for zone 6.
           default: "Zone 6"
           selector:
             text: {}
@@ -377,11 +407,15 @@ blueprint:
       input:
         mow_time_1:
           name: "Session 1 — Start Time"
+          description: >
+            Start time for scheduled mowing session 1.
           default: "04:00:00"
           selector:
             time: {}
         days_session_1:
           name: "Session 1 — Active Days"
+          description: >
+            Weekdays on which scheduled mowing session 1 is allowed to run.
           default: [mon, tue, wed, thu, fri, sat, sun]
           selector:
             select:
@@ -408,11 +442,15 @@ blueprint:
       input:
         mow_time_2:
           name: "Session 2 — Start Time"
+          description: >
+            Start time for scheduled mowing session 2.
           default: "18:30:00"
           selector:
             time: {}
         days_session_2:
           name: "Session 2 — Active Days"
+          description: >
+            Weekdays on which scheduled mowing session 2 is allowed to run.
           default: [mon, tue, wed, thu, fri, sat, sun]
           selector:
             select:
@@ -440,11 +478,17 @@ blueprint:
       input:
         mow_time_3:
           name: "Session 3 — Start Time"
+          description: >
+            Start time for optional scheduled mowing session 3. Leave the active days empty to
+            disable this session.
           default: "04:00:00"
           selector:
             time: {}
         days_session_3:
           name: "Session 3 — Active Days"
+          description: >
+            Weekdays on which optional scheduled mowing session 3 is allowed to run. Leave empty
+            to disable this session.
           default: []
           selector:
             select:
@@ -472,11 +516,17 @@ blueprint:
       input:
         mow_time_4:
           name: "Session 4 — Start Time"
+          description: >
+            Start time for optional scheduled mowing session 4. Leave the active days empty to
+            disable this session.
           default: "18:30:00"
           selector:
             time: {}
         days_session_4:
           name: "Session 4 — Active Days"
+          description: >
+            Weekdays on which optional scheduled mowing session 4 is allowed to run. Leave empty
+            to disable this session.
           default: []
           selector:
             select:
@@ -504,12 +554,17 @@ blueprint:
       input:
         zone_tracker:
           name: Zone Tracker (input_number)
+          description: >
+            input_number helper that stores the last completed zone number for round-robin zone
+            rotation.
           default: ""
           selector:
             entity:
               domain: input_number
         skip_toggle:
           name: Manual Skip Toggle (input_boolean)
+          description: >
+            input_boolean helper used to manually skip mowing sessions while enabled.
           default: ""
           selector:
             entity:
@@ -526,12 +581,17 @@ blueprint:
               domain: input_boolean
         last_run_tracker:
           name: Last Run Datetime (input_datetime)
+          description: >
+            input_datetime helper that stores the time of the last successful mowing run.
           default: ""
           selector:
             entity:
               domain: input_datetime
         rain_last_seen:
           name: Rain Last Seen (input_datetime)
+          description: >
+            input_datetime helper that stores when rain was last detected for wet-lawn dry-out
+            handling.
           default: ""
           selector:
             entity:
@@ -554,6 +614,9 @@ blueprint:
               mode: slider
         zones_per_session:
           name: Zones Per Session
+          description: >
+            Number of zones to mow during one session. If only one active zone exists, this is
+            forced to one.
           default: 1
           selector:
             number:
@@ -563,6 +626,8 @@ blueprint:
               mode: slider
         zone_duration:
           name: Zone Duration Ceiling (minutes)
+          description: >
+            Maximum runtime allowed for each zone before the mower is sent back to dock.
           default: 90
           selector:
             number:
@@ -573,6 +638,8 @@ blueprint:
               mode: slider
         inter_zone_rest:
           name: Rest Between Zones (minutes)
+          description: >
+            Rest period between Zone A and Zone B when two zones are mowed in one session.
           default: 40
           selector:
             number:
@@ -629,6 +696,8 @@ blueprint:
       input:
         blade_height_number_entity:
           name: Blade Height Number Entity
+          description: >
+            Optional Mammotion number entity used to set the mower blade height before mowing.
           default: ""
           selector:
             entity:
@@ -684,12 +753,16 @@ blueprint:
 
         working_speed_number_entity:
           name: Working Speed Number Entity
+          description: >
+            Optional Mammotion number entity used to set the working speed before mowing.
           default: ""
           selector:
             entity:
               domain: number
         mammotion_working_speed:
           name: Working Speed (m/s)
+          description: >
+            Desired working speed in meters per second.
           default: 0.3
           selector:
             number:
@@ -701,12 +774,16 @@ blueprint:
 
         cutting_path_angle_number_entity:
           name: Cutting Path Angle Number Entity
+          description: >
+            Optional Mammotion number entity used to set the cutting path angle before mowing.
           default: ""
           selector:
             entity:
               domain: number
         mammotion_cutting_path_angle:
           name: Cutting Path Angle (degrees)
+          description: >
+            Desired cutting path angle in degrees.
           default: 90
           selector:
             number:
@@ -718,12 +795,16 @@ blueprint:
 
         crossing_angle_number_entity:
           name: Crossing Angle Number Entity (optional)
+          description: >
+            Optional Mammotion number entity used to set the crossing angle before mowing.
           default: ""
           selector:
             entity:
               domain: number
         mammotion_crossing_angle:
           name: Crossing Angle (degrees)
+          description: >
+            Desired crossing angle in degrees.
           default: 90
           selector:
             number:
@@ -735,12 +816,16 @@ blueprint:
 
         path_spacing_number_entity:
           name: Path Spacing Number Entity
+          description: >
+            Optional Mammotion number entity used to set the mowing path spacing before mowing.
           default: ""
           selector:
             entity:
               domain: number
         mammotion_path_spacing:
           name: Path Spacing (cm)
+          description: >
+            Desired distance between mowing paths in centimeters.
           default: 12
           selector:
             number:
@@ -752,12 +837,17 @@ blueprint:
 
         start_progress_number_entity:
           name: Start Progress Number Entity (optional)
+          description: >
+            Optional Mammotion number entity used to set the starting progress percentage before
+            mowing.
           default: ""
           selector:
             entity:
               domain: number
         mammotion_start_progress:
           name: Start Progress (%)
+          description: >
+            Desired start progress percentage. Usually 0 to start from the beginning.
           default: 0
           selector:
             number:
@@ -769,12 +859,16 @@ blueprint:
 
         cutter_speed_select_entity:
           name: Cutter Speed Select Entity
+          description: >
+            Optional Mammotion select entity used to set the cutter speed before mowing.
           default: ""
           selector:
             entity:
               domain: select
         cutter_speed_option:
           name: Cutter Speed Option
+          description: >
+            Desired cutter speed option to apply before mowing.
           default: "fast"
           selector:
             select:
@@ -788,12 +882,16 @@ blueprint:
 
         cutting_path_mode_select_entity:
           name: Cutting Path Mode Select Entity
+          description: >
+            Optional Mammotion select entity used to set the cutting path mode before mowing.
           default: ""
           selector:
             entity:
               domain: select
         cutting_path_mode_option:
           name: Cutting Path Mode Option
+          description: >
+            Desired cutting path mode option to apply before mowing.
           default: "single_grid"
           selector:
             select:
@@ -809,12 +907,17 @@ blueprint:
 
         cutting_path_angle_mode_select_entity:
           name: Cutting Path Angle Mode Select Entity
+          description: >
+            Optional Mammotion select entity used to set the cutting path angle mode before
+            mowing.
           default: ""
           selector:
             entity:
               domain: select
         cutting_path_angle_mode_option:
           name: Cutting Path Angle Mode Option
+          description: >
+            Desired cutting path angle mode option to apply before mowing.
           default: "relative_angle"
           selector:
             select:
@@ -828,12 +931,17 @@ blueprint:
 
         mow_order_select_entity:
           name: Mow Order Select Entity
+          description: >
+            Optional Mammotion select entity used to set whether borders or grid lines are mowed
+            first.
           default: ""
           selector:
             entity:
               domain: select
         mow_order_option:
           name: Mow Order Option
+          description: >
+            Desired mowing order option to apply before mowing.
           default: "border_first"
           selector:
             select:
@@ -845,12 +953,16 @@ blueprint:
 
         no_go_laps_select_entity:
           name: No-go Zone Mowing Laps Select Entity
+          description: >
+            Optional Mammotion select entity used to set the number of laps around no-go zones.
           default: ""
           selector:
             entity:
               domain: select
         no_go_laps_option:
           name: No-go Zone Mowing Laps Option
+          description: >
+            Desired number of mowing laps around no-go zones.
           default: "one"
           selector:
             select:
@@ -868,12 +980,17 @@ blueprint:
 
         obstacle_avoidance_select_entity:
           name: Obstacle Avoidance Mode Select Entity
+          description: >
+            Optional Mammotion select entity used to set obstacle avoidance behavior before
+            mowing.
           default: ""
           selector:
             entity:
               domain: select
         obstacle_avoidance_option:
           name: Obstacle Avoidance Option
+          description: >
+            Desired obstacle avoidance option to apply before mowing.
           default: "no_touch"
           selector:
             select:
@@ -887,12 +1004,16 @@ blueprint:
 
         perimeter_laps_select_entity:
           name: Perimeter Mowing Laps Select Entity
+          description: >
+            Optional Mammotion select entity used to set the number of perimeter mowing laps.
           default: ""
           selector:
             entity:
               domain: select
         perimeter_laps_option:
           name: Perimeter Mowing Laps Option
+          description: >
+            Desired number of perimeter mowing laps.
           default: "two"
           selector:
             select:
@@ -910,12 +1031,16 @@ blueprint:
 
         traversal_mode_select_entity:
           name: Traversal Mode Select Entity
+          description: >
+            Optional Mammotion select entity used to set how the mower travels between areas.
           default: ""
           selector:
             entity:
               domain: select
         traversal_mode_option:
           name: Traversal Mode Option
+          description: >
+            Desired traversal mode option to apply before mowing.
           default: "follow_perimeter"
           selector:
             select:
@@ -927,12 +1052,16 @@ blueprint:
 
         turnaround_mode_select_entity:
           name: Turnaround Mode Select Entity
+          description: >
+            Optional Mammotion select entity used to set the turnaround behavior at path ends.
           default: ""
           selector:
             entity:
               domain: select
         turnaround_mode_option:
           name: Turnaround Mode Option
+          description: >
+            Desired turnaround mode option to apply before mowing.
           default: "zero_turn"
           selector:
             select:
@@ -1011,18 +1140,25 @@ blueprint:
 
         night_light_switch_entity:
           name: Auto Lighting / Night Light Switch Entity
+          description: >
+            Optional Mammotion switch entity used to enable automatic lighting or night light
+            before mowing.
           default: ""
           selector:
             entity:
               domain: switch
         rain_detection_during_mow_switch_entity:
           name: Rain Detection During Mow Switch Entity
+          description: >
+            Optional Mammotion switch entity used to enable rain detection while mowing.
           default: ""
           selector:
             entity:
               domain: switch
         rain_detection_mower_switch_entity:
           name: Mower Rain Detection Switch Entity
+          description: >
+            Optional Mammotion switch entity used to enable the mower rain detection feature.
           default: ""
           selector:
             entity:
