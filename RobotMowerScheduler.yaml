@@ -21,7 +21,8 @@ blueprint:
     7. Checks an optional temperature sensor before starting Zone A and Zone B.
     8. Keeps the 6-hour wet-lawn dry-out delay.
     9. Uses time-left based completion plus a 3-minute grace delay before docking.
-    10. Guards against interrupting a recent low-battery unfinished-task resume
+    10. Enforces an optional minimum time between successful mowing runs.
+    11. Guards against interrupting a recent low-battery unfinished-task resume
        condition using Last Error, Last Error Time, optional Last Error Code,
        optional Charging, and optional Activity Mode entities.
 
@@ -493,6 +494,21 @@ blueprint:
               step: 5
               unit_of_measurement: min
               mode: slider
+
+        minimum_time_between_mows:
+          name: Minimum Time Between Mowing Runs
+          description: >
+            Minimum time in hours between successful mowing runs. The value is
+            checked against the Last Run Datetime helper before Zone A starts.
+            Set to 0 to disable this check.
+          default: 0
+          selector:
+            number:
+              min: 0
+              max: 72
+              step: 1
+              unit_of_measurement: h
+              mode: slider
         post_start_pause_resume_window:
           name: Immediate Pause Recovery Window (seconds)
           description: Watch briefly after start; if the mower becomes paused, send one continue command.
@@ -922,6 +938,7 @@ variables:
   zones_per_session: !input zones_per_session
   zone_duration: !input zone_duration
   inter_zone_rest: !input inter_zone_rest
+  minimum_time_between_mows: !input minimum_time_between_mows
   active_zone_count: !input active_zone_count
   post_start_pause_resume_window: !input post_start_pause_resume_window
   sw1: !input zone_1_switch
@@ -1108,10 +1125,38 @@ action:
         {% else %}
           86400
         {% endif %}
+      secs_since_last_run: >
+        {% set lr = states(last_run_tracker) %}
+        {% set lr_ts = as_timestamp(lr, none) %}
+        {% if lr_ts is none %}
+          999999999
+        {% else %}
+          {{ (as_timestamp(now()) - lr_ts) | int }}
+        {% endif %}
 
   - condition: template
     alias: "Skip scheduled session if today is not active; manual starts bypass only this day gate"
     value_template: "{{ trigger.id == 'manual_start' or today_dow in allowed_days }}"
+
+  - choose:
+      - conditions:
+          - condition: template
+            alias: "Skip if minimum time between mowing runs is still active"
+            value_template: >
+              {% set min_hours = minimum_time_between_mows | int(0) %}
+              {{ min_hours > 0 and (secs_since_last_run | int) < (min_hours * 3600) }}
+        sequence:
+          - service: notify.persistent_notification
+            data:
+              title: "⏱️ {{ mower_display_name }} Mähvorgang übersprungen — Mindestabstand"
+              message: >
+                {{ trigger.id }} wurde übersprungen, weil der konfigurierte Mindestabstand
+                zwischen zwei erfolgreichen Mähvorgängen noch nicht erreicht ist.
+
+                Letzter erfolgreicher Mähvorgang: {{ states(last_run_tracker) }}.
+                Mindestabstand: {{ minimum_time_between_mows }} Stunden.
+                Verbleibende Wartezeit: {{ (((minimum_time_between_mows | int(0) * 3600) - (secs_since_last_run | int)) / 60) | round(0, 'ceil') | int }} Minuten.
+          - stop: "Mindestabstand zwischen Mähvorgängen noch aktiv"
 
   - choose:
       - conditions:
