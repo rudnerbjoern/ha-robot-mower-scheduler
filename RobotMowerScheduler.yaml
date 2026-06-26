@@ -792,12 +792,31 @@ blueprint:
 
         wildlife_safety_select_entity:
           name: Wildlife Safety Select Entity
+          description: >
+            Optional Mammotion Wildlife Safety select entity. If the sun-based
+            Wildlife Safety schedule is enabled, this entity is set to
+            low_speed_mowing at sunset and off at sunrise.
           default: ""
           selector:
             entity:
               domain: select
+
+        wildlife_safety_sun_schedule_enabled:
+          name: Wildlife Safety Sun Schedule Enabled
+          description: >
+            If enabled, Wildlife Safety is automatically set to low_speed_mowing
+            at sunset and off at sunrise. In this mode, the normal mow-start
+            setting for Wildlife Safety is not applied before Zone A or Zone B.
+          default: true
+          selector:
+            boolean: {}
+
         wildlife_safety_option:
-          name: Wildlife Safety Option
+          name: Wildlife Safety Option Before Mowing
+          description: >
+            Used only when the sun-based Wildlife Safety schedule is disabled.
+            If the sun schedule is enabled, Wildlife Safety is controlled by
+            sunrise and sunset instead.
           default: "low_speed_mowing"
           selector:
             select:
@@ -844,6 +863,12 @@ trigger:
   - platform: state
     entity_id: !input manual_start_button
     id: manual_start
+  - platform: sun
+    event: sunset
+    id: wildlife_sunset
+  - platform: sun
+    event: sunrise
+    id: wildlife_sunrise
 
 mode: single
 max_exceeded: silent
@@ -920,17 +945,79 @@ variables:
   turnaround_mode_select_entity: !input turnaround_mode_select_entity
   turnaround_mode_option: !input turnaround_mode_option
   wildlife_safety_select_entity: !input wildlife_safety_select_entity
+  wildlife_safety_sun_schedule_enabled: !input wildlife_safety_sun_schedule_enabled
   wildlife_safety_option: !input wildlife_safety_option
   night_light_switch_entity: !input night_light_switch_entity
   rain_detection_during_mow_switch_entity: !input rain_detection_during_mow_switch_entity
   rain_detection_mower_switch_entity: !input rain_detection_mower_switch_entity
 
 condition:
-  - alias: "Skip session if manual skip toggle is on"
+  - alias: "Skip mowing sessions if manual skip toggle is on; allow wildlife sun schedule triggers"
     condition: template
-    value_template: "{{ not is_state(skip_toggle, 'on') }}"
+    value_template: >
+      {{ trigger.id in ['wildlife_sunset', 'wildlife_sunrise'] or not is_state(skip_toggle, 'on') }}
 
 action:
+  - choose:
+      - conditions:
+          - condition: template
+            alias: "Set Wildlife Safety to low_speed_mowing at sunset"
+            value_template: >
+              {{
+                trigger.id == 'wildlife_sunset'
+                and (wildlife_safety_sun_schedule_enabled | bool)
+                and (wildlife_safety_select_entity | string | trim | length > 0)
+              }}
+        sequence:
+          - service: select.select_option
+            target:
+              entity_id: "{{ wildlife_safety_select_entity }}"
+            data:
+              option: "low_speed_mowing"
+            continue_on_error: true
+          - service: notify.persistent_notification
+            data:
+              title: "🦔 {{ mower_display_name }} Wildlife Safety enabled"
+              message: >
+                Sunset detected. Wildlife Safety was set to low_speed_mowing.
+          - stop: "Wildlife Safety set to low_speed_mowing at sunset"
+
+      - conditions:
+          - condition: template
+            alias: "Set Wildlife Safety to off at sunrise"
+            value_template: >
+              {{
+                trigger.id == 'wildlife_sunrise'
+                and (wildlife_safety_sun_schedule_enabled | bool)
+                and (wildlife_safety_select_entity | string | trim | length > 0)
+              }}
+        sequence:
+          - service: select.select_option
+            target:
+              entity_id: "{{ wildlife_safety_select_entity }}"
+            data:
+              option: "off"
+            continue_on_error: true
+          - service: notify.persistent_notification
+            data:
+              title: "☀️ {{ mower_display_name }} Wildlife Safety disabled"
+              message: >
+                Sunrise detected. Wildlife Safety was set to off.
+          - stop: "Wildlife Safety set to off at sunrise"
+
+      - conditions:
+          - condition: template
+            alias: "Stop unused Wildlife Safety sun trigger"
+            value_template: >
+              {{
+                trigger.id in ['wildlife_sunset', 'wildlife_sunrise']
+                and (
+                  not (wildlife_safety_sun_schedule_enabled | bool)
+                  or (wildlife_safety_select_entity | string | trim | length == 0)
+                )
+              }}
+        sequence:
+          - stop: "Wildlife Safety sun schedule disabled or entity not configured"
   - variables:
       zone_mod: "{{ active_zone_count | int(6) }}"
       current_zone: "{{ states(zone_tracker) | int(0) }}"
@@ -1347,7 +1434,11 @@ action:
             value_template: >
               {% set e = wildlife_safety_select_entity | string | trim %}
               {% set desired = wildlife_safety_option | string %}
-              {{ e | length > 0 and states(e) | string != desired }}
+              {{
+                not (wildlife_safety_sun_schedule_enabled | bool)
+                and e | length > 0
+                and states(e) | string != desired
+              }}
         sequence:
           - service: select.select_option
             target:
@@ -1863,7 +1954,11 @@ action:
                             value_template: >
                               {% set e = wildlife_safety_select_entity | string | trim %}
                               {% set desired = wildlife_safety_option | string %}
-                              {{ e | length > 0 and states(e) | string != desired }}
+                              {{
+                                not (wildlife_safety_sun_schedule_enabled | bool)
+                                and e | length > 0
+                                and states(e) | string != desired
+                              }}
                         sequence:
                           - service: select.select_option
                             target:
