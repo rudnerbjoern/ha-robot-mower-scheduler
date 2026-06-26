@@ -18,9 +18,10 @@ blueprint:
        dry-out tracking, and manual triggering.
     5. Applies new-integration number/select/switch entities before each mow.
     6. Checks rain at session start, during mowing, and before Zone B.
-    7. Keeps the 6-hour wet-lawn dry-out delay.
-    8. Uses time-left based completion plus a 3-minute grace delay before docking.
-    9. Guards against interrupting a recent low-battery unfinished-task resume
+    7. Checks an optional temperature sensor before starting Zone A and Zone B.
+    8. Keeps the 6-hour wet-lawn dry-out delay.
+    9. Uses time-left based completion plus a 3-minute grace delay before docking.
+    10. Guards against interrupting a recent low-battery unfinished-task resume
        condition using Last Error, Last Error Time, optional Last Error Code,
        optional Charging, and optional Activity Mode entities.
 
@@ -265,6 +266,32 @@ blueprint:
           selector:
             entity:
               domain: weather
+        temperature_sensor:
+          name: Temperature Sensor
+          description: >
+            Optional temperature sensor used to prevent mowing when it is too warm.
+            If configured, the mower only starts when the current temperature is below
+            the configured maximum start temperature.
+          default: ""
+          selector:
+            entity:
+              filter:
+                domain: sensor
+                device_class: temperature
+        max_start_temperature:
+          name: Maximum Start Temperature
+          description: >
+            Mowing is only started when the current temperature is below this value.
+            If a temperature sensor is configured but unavailable or invalid, the session
+            is skipped for safety.
+          default: 28
+          selector:
+            number:
+              min: 0
+              max: 45
+              step: 0.5
+              unit_of_measurement: "°C"
+              mode: slider
 
     session_1_section:
       name: "Session 1"
@@ -836,6 +863,8 @@ variables:
   mower_task_status_sensor: !input mower_task_status_sensor
   resume_error_guard_hours: !input resume_error_guard_hours
   weather_entity: !input weather_entity
+  temperature_sensor: !input temperature_sensor
+  max_start_temperature: !input max_start_temperature
   zone_tracker: !input zone_tracker
   skip_toggle: !input skip_toggle
   rain_last_seen: !input rain_last_seen
@@ -975,6 +1004,28 @@ action:
   - choose:
       - conditions:
           - condition: template
+            alias: "Skip if current temperature is too high at session start"
+            value_template: >
+              {% set temp_entity = temperature_sensor | string | trim %}
+              {% if temp_entity | length == 0 %}
+                false
+              {% else %}
+                {% set temp = states(temp_entity) | float(none) %}
+                {{ temp is none or temp >= (max_start_temperature | float) }}
+              {% endif %}
+        sequence:
+          - service: notify.persistent_notification
+            data:
+              title: "🌡️ {{ mower_display_name }} session skipped — temperature"
+              message: >
+                {{ trigger.id }} skipped: current temperature is
+                {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'not configured' }} °C.
+                Mowing only starts below {{ max_start_temperature }} °C.
+          - stop: "Temperature too high or unavailable — session skipped"
+
+  - choose:
+      - conditions:
+          - condition: template
             alias: "Skip if recent low-battery resume condition indicates unfinished task"
             value_template: >
               {% set err_entity = mower_last_error_sensor | string | trim %}
@@ -1037,6 +1088,8 @@ action:
         Zone tracker at {{ current_zone }}, mowing {{ zone_a_name }} (zone {{ zone_a }})
         {% if effective_zones_per_session | int >= 2 %} then {{ zone_b_name }} (zone {{ zone_b }}){% endif %}.
         Forecast: {{ states(weather_entity) }}.
+        Temperature: {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'not configured' }} °C.
+        Maximum start temperature: {{ max_start_temperature }} °C.
 
   - alias: "Turn off all active area switches before Zone A"
     service: switch.turn_off
@@ -1507,9 +1560,56 @@ action:
           - choose:
               - conditions:
                   - condition: template
-                    alias: "Still clear to mow Zone B"
+                    alias: "Skip Zone B if rain is detected before start"
                     value_template: >
-                      {{ not (states(weather_entity) in ['rainy', 'pouring', 'lightning-rainy', 'hail', 'snowy-rainy', 'exceptional']) }}
+                      {{ states(weather_entity) in ['rainy', 'pouring', 'lightning-rainy', 'hail', 'snowy-rainy', 'exceptional'] }}
+                sequence:
+                  - service: input_datetime.set_datetime
+                    target:
+                      entity_id: !input rain_last_seen
+                    data:
+                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+                  - service: notify.persistent_notification
+                    data:
+                      title: "🌧️ {{ mower_display_name }} Zone B skipped — rain"
+                      message: >
+                        Rain detected before Zone B. Skipping {{ zone_b_name }}.
+                        Forecast: {{ states(weather_entity) }}.
+                        Zone tracker stays at {{ zone_a }}.
+                        A 6-hour dry-out delay is now active.
+                  - stop: "Rain detected before Zone B"
+
+          - choose:
+              - conditions:
+                  - condition: template
+                    alias: "Skip Zone B if current temperature is too high before start"
+                    value_template: >
+                      {% set temp_entity = temperature_sensor | string | trim %}
+                      {% if temp_entity | length == 0 %}
+                        false
+                      {% else %}
+                        {% set temp = states(temp_entity) | float(none) %}
+                        {{ temp is none or temp >= (max_start_temperature | float) }}
+                      {% endif %}
+                sequence:
+                  - service: notify.persistent_notification
+                    data:
+                      title: "🌡️ {{ mower_display_name }} Zone B skipped — temperature"
+                      message: >
+                        Zone B skipped before starting {{ zone_b_name }}.
+
+                        Current temperature:
+                        {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'not configured' }} °C.
+
+                        Mowing only starts below {{ max_start_temperature }} °C.
+                        Zone tracker stays at {{ zone_a }}.
+                  - stop: "Temperature too high or unavailable before Zone B"
+
+          - choose:
+              - conditions:
+                  - condition: template
+                    alias: "Still clear to mow Zone B"
+                    value_template: "true"
                 sequence:
                   - alias: "Turn off all active area switches before Zone B"
                     service: switch.turn_off
@@ -1963,16 +2063,3 @@ action:
                                 Rain detected while mowing {{ zone_b_name }}. The mower was sent to dock.
                                 Zone tracker stays at {{ zone_a }}.
                                 A 6-hour dry-out delay is now active.
-            default:
-              - service: input_datetime.set_datetime
-                target:
-                  entity_id: !input rain_last_seen
-                data:
-                  datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
-              - service: notify.persistent_notification
-                data:
-                  title: "🌧️ {{ mower_display_name }} Zone B skipped — {{ trigger.id }}"
-                  message: >
-                    Rain detected before Zone B. Skipping {{ zone_b_name }}.
-                    Zone tracker stays at {{ zone_a }}.
-              - stop: "Rain detected before Zone B"
