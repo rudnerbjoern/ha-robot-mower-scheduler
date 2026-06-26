@@ -149,6 +149,32 @@ blueprint:
             entity:
               domain: sensor
 
+        mower_battery_level_sensor:
+          name: Mower Battery Level Sensor
+          description: >
+            Optional battery level sensor. If configured, Zone A and Zone B only
+            start when the battery level is at or above the configured minimum.
+            If configured but unavailable or invalid, the start is skipped for safety.
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+              device_class: battery
+
+        minimum_battery_before_start:
+          name: Minimum Battery Before Start
+          description: >
+            Minimum battery level required before starting Zone A or Zone B.
+            This check is disabled when no battery sensor is configured.
+          default: 80
+          selector:
+            number:
+              min: 0
+              max: 100
+              step: 5
+              unit_of_measurement: "%"
+              mode: slider
+
         resume_error_guard_hours:
           name: Low-Battery Resume Error Guard Time
           description: How long a recent matching low-battery/resume error should block starting a new scheduled task.
@@ -939,6 +965,8 @@ variables:
   mower_progress_sensor: !input mower_progress_sensor
   mower_time_left_sensor: !input mower_time_left_sensor
   mower_task_status_sensor: !input mower_task_status_sensor
+  mower_battery_level_sensor: !input mower_battery_level_sensor
+  minimum_battery_before_start: !input minimum_battery_before_start
   resume_error_guard_hours: !input resume_error_guard_hours
   weather_entity: !input weather_entity
   temperature_sensor: !input temperature_sensor
@@ -1228,6 +1256,30 @@ action:
   - choose:
       - conditions:
           - condition: template
+            alias: "Skip if battery level is too low at session start"
+            value_template: >
+              {% set battery_entity = mower_battery_level_sensor | string | trim %}
+              {% if battery_entity | length == 0 %}
+                false
+              {% else %}
+                {% set battery = states(battery_entity) | float(none) %}
+                {{ battery is none or battery < (minimum_battery_before_start | float) }}
+              {% endif %}
+        sequence:
+          - service: notify.persistent_notification
+            data:
+              title: "🔋 {{ mower_display_name }} Sitzung übersprungen — Akkustand"
+              message: >
+                {{ trigger.id }} wurde übersprungen: Der aktuelle Akkustand beträgt
+                {{ states(mower_battery_level_sensor) if mower_battery_level_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} %.
+                Erforderlich sind mindestens {{ minimum_battery_before_start }} %.
+
+                Es wurden keine Zonenschalter geändert und der Mäher wurde nicht gestartet.
+          - stop: "Akkustand zu niedrig oder nicht verfügbar — Sitzung übersprungen"
+
+  - choose:
+      - conditions:
+          - condition: template
             alias: "Skip if recent low-battery resume condition indicates unfinished task"
             value_template: >
               {% set err_entity = mower_last_error_sensor | string | trim %}
@@ -1304,6 +1356,8 @@ action:
                 Wettervorhersage: {{ states(weather_entity) }}.
                 Temperatur: {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
                 Maximale Starttemperatur: {{ max_start_temperature }} °C.
+                Akkustand: {{ states(mower_battery_level_sensor) if mower_battery_level_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} %.
+                Mindest-Akkustand vor Start: {{ minimum_battery_before_start }} %.
                 Mindestabstand zwischen Mähvorgängen: {{ minimum_time_between_mows }} Stunden.
 
                 Es wurden keine Zonenschalter geändert, keine Mäher-Einstellungen gesetzt,
@@ -1319,6 +1373,8 @@ action:
         Wettervorhersage: {{ states(weather_entity) }}.
         Temperatur: {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
         Maximale Starttemperatur: {{ max_start_temperature }} °C.
+        Akkustand: {{ states(mower_battery_level_sensor) if mower_battery_level_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} %.
+        Mindest-Akkustand vor Start: {{ minimum_battery_before_start }} %.
 
   - alias: "Turn off all active area switches before Zone A"
     service: switch.turn_off
@@ -1837,6 +1893,32 @@ action:
                         Der Mähvorgang startet nur unterhalb von {{ max_start_temperature }} °C.
                         Zonenzähler bleibt bei {{ zone_a }}.
                   - stop: "Temperatur vor Zone B zu hoch oder nicht verfügbar"
+
+          - choose:
+              - conditions:
+                  - condition: template
+                    alias: "Skip Zone B if battery level is too low before start"
+                    value_template: >
+                      {% set battery_entity = mower_battery_level_sensor | string | trim %}
+                      {% if battery_entity | length == 0 %}
+                        false
+                      {% else %}
+                        {% set battery = states(battery_entity) | float(none) %}
+                        {{ battery is none or battery < (minimum_battery_before_start | float) }}
+                      {% endif %}
+                sequence:
+                  - service: notify.persistent_notification
+                    data:
+                      title: "🔋 {{ mower_display_name }} Zone B übersprungen — Akkustand"
+                      message: >
+                        Zone B wurde vor dem Start von {{ zone_b_name }} übersprungen.
+
+                        Aktueller Akkustand:
+                        {{ states(mower_battery_level_sensor) if mower_battery_level_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} %.
+
+                        Erforderlich sind mindestens {{ minimum_battery_before_start }} %.
+                        Zonenzähler bleibt bei {{ zone_a }}.
+                  - stop: "Akkustand vor Zone B zu niedrig oder nicht verfügbar"
 
           - choose:
               - conditions:
