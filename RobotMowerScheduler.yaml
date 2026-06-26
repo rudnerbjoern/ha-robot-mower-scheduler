@@ -175,6 +175,41 @@ blueprint:
               unit_of_measurement: "%"
               mode: slider
 
+        mower_start_state_check_enabled:
+          name: Mower State Check Before Start
+          description: >
+            If enabled, Zone A and Zone B only start when the lawn_mower entity
+            is in one of the configured allowed states. This helps prevent starts
+            while the mower is already mowing, returning, paused, in error, or unavailable.
+          default: true
+          selector:
+            boolean: {}
+
+        allowed_mower_states_before_start:
+          name: Allowed Mower States Before Start
+          description: >
+            Mower states that are allowed before starting Zone A or Zone B.
+            The default allows starts only when the mower is docked or idle.
+          default:
+            - docked
+            - idle
+          selector:
+            select:
+              multiple: true
+              options:
+                - label: "docked"
+                  value: "docked"
+                - label: "idle"
+                  value: "idle"
+                - label: "paused"
+                  value: "paused"
+                - label: "returning"
+                  value: "returning"
+                - label: "mowing"
+                  value: "mowing"
+                - label: "error"
+                  value: "error"
+
         resume_error_guard_hours:
           name: Low-Battery Resume Error Guard Time
           description: How long a recent matching low-battery/resume error should block starting a new scheduled task.
@@ -967,6 +1002,8 @@ variables:
   mower_task_status_sensor: !input mower_task_status_sensor
   mower_battery_level_sensor: !input mower_battery_level_sensor
   minimum_battery_before_start: !input minimum_battery_before_start
+  mower_start_state_check_enabled: !input mower_start_state_check_enabled
+  allowed_mower_states_before_start: !input allowed_mower_states_before_start
   resume_error_guard_hours: !input resume_error_guard_hours
   weather_entity: !input weather_entity
   temperature_sensor: !input temperature_sensor
@@ -1280,6 +1317,32 @@ action:
   - choose:
       - conditions:
           - condition: template
+            alias: "Skip if mower state is not allowed before session start"
+            value_template: >
+              {% set allowed = allowed_mower_states_before_start if allowed_mower_states_before_start is iterable and allowed_mower_states_before_start is not string else [] %}
+              {% set mower_state = states(mower_entity) | lower %}
+              {{
+                mower_start_state_check_enabled | bool
+                and (allowed | list | count > 0)
+                and mower_state not in allowed
+              }}
+        sequence:
+          - service: notify.persistent_notification
+            data:
+              title: "🤖 {{ mower_display_name }} Sitzung übersprungen — Mäherstatus"
+              message: >
+                {{ trigger.id }} wurde übersprungen: Der aktuelle Mäherstatus ist
+                {{ states(mower_entity) }}.
+
+                Erlaubte Statuswerte vor dem Start:
+                {{ allowed_mower_states_before_start | join(', ') }}.
+
+                Es wurden keine Zonenschalter geändert und der Mäher wurde nicht gestartet.
+          - stop: "Mäherstatus vor Sitzungsstart nicht erlaubt — Sitzung übersprungen"
+
+  - choose:
+      - conditions:
+          - condition: template
             alias: "Skip if recent low-battery resume condition indicates unfinished task"
             value_template: >
               {% set err_entity = mower_last_error_sensor | string | trim %}
@@ -1349,6 +1412,8 @@ action:
                 führt aber keine Änderungen aus.
 
                 Auslöser: {{ trigger.id }}.
+                Mäherstatus: {{ states(mower_entity) }}.
+                Erlaubte Startstatuswerte: {{ allowed_mower_states_before_start | join(', ') if mower_start_state_check_enabled | bool else 'Prüfung deaktiviert' }}.
                 Zonenzähler steht auf {{ current_zone }}.
                 Geplante Zone A: {{ zone_a_name }} (Zone {{ zone_a }}).
                 {% if effective_zones_per_session | int >= 2 %}Geplante Zone B: {{ zone_b_name }} (Zone {{ zone_b }}).{% else %}Zone B ist für diese Sitzung nicht geplant.{% endif %}
@@ -1919,6 +1984,32 @@ action:
                         Erforderlich sind mindestens {{ minimum_battery_before_start }} %.
                         Zonenzähler bleibt bei {{ zone_a }}.
                   - stop: "Akkustand vor Zone B zu niedrig oder nicht verfügbar"
+
+          - choose:
+              - conditions:
+                  - condition: template
+                    alias: "Skip Zone B if mower state is not allowed before start"
+                    value_template: >
+                      {% set allowed = allowed_mower_states_before_start if allowed_mower_states_before_start is iterable and allowed_mower_states_before_start is not string else [] %}
+                      {% set mower_state = states(mower_entity) | lower %}
+                      {{
+                        mower_start_state_check_enabled | bool
+                        and (allowed | list | count > 0)
+                        and mower_state not in allowed
+                      }}
+                sequence:
+                  - service: notify.persistent_notification
+                    data:
+                      title: "🤖 {{ mower_display_name }} Zone B übersprungen — Mäherstatus"
+                      message: >
+                        Zone B wurde vor dem Start von {{ zone_b_name }} übersprungen.
+
+                        Aktueller Mäherstatus: {{ states(mower_entity) }}.
+                        Erlaubte Statuswerte vor dem Start:
+                        {{ allowed_mower_states_before_start | join(', ') }}.
+
+                        Zonenzähler bleibt bei {{ zone_a }}.
+                  - stop: "Mäherstatus vor Zone B nicht erlaubt"
 
           - choose:
               - conditions:
