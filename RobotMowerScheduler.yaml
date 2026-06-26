@@ -977,10 +977,10 @@ action:
             continue_on_error: true
           - service: notify.persistent_notification
             data:
-              title: "🦔 {{ mower_display_name }} Wildlife Safety enabled"
+              title: "🦔 {{ mower_display_name }} Wildlife-Schutz aktiviert"
               message: >
-                Sunset detected. Wildlife Safety was set to low_speed_mowing.
-          - stop: "Wildlife Safety set to low_speed_mowing at sunset"
+                Sonnenuntergang erkannt. Der Wildlife-Schutz wurde auf low_speed_mowing gesetzt.
+          - stop: "Wildlife-Schutz bei Sonnenuntergang auf low_speed_mowing gesetzt"
 
       - conditions:
           - condition: template
@@ -1000,10 +1000,10 @@ action:
             continue_on_error: true
           - service: notify.persistent_notification
             data:
-              title: "☀️ {{ mower_display_name }} Wildlife Safety disabled"
+              title: "☀️ {{ mower_display_name }} Wildlife-Schutz deaktiviert"
               message: >
-                Sunrise detected. Wildlife Safety was set to off.
-          - stop: "Wildlife Safety set to off at sunrise"
+                Sonnenaufgang erkannt. Der Wildlife-Schutz wurde auf off gesetzt.
+          - stop: "Wildlife-Schutz bei Sonnenaufgang auf off gesetzt"
 
       - conditions:
           - condition: template
@@ -1017,7 +1017,7 @@ action:
                 )
               }}
         sequence:
-          - stop: "Wildlife Safety sun schedule disabled or entity not configured"
+          - stop: "Wildlife-Sonnenplan deaktiviert oder Entity nicht konfiguriert"
   - variables:
       zone_mod: "{{ active_zone_count | int(6) }}"
       current_zone: "{{ states(zone_tracker) | int(0) }}"
@@ -1068,11 +1068,11 @@ action:
               datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
           - service: notify.persistent_notification
             data:
-              title: "🌧️ {{ mower_display_name }} session skipped — rain"
+              title: "🌧️ {{ mower_display_name }} Sitzung übersprungen — Regen"
               message: >
-                {{ trigger.id }} skipped: forecast shows {{ states(weather_entity) }}.
-                A 6-hour dry-out delay will apply once rain clears.
-          - stop: "Currently raining — session skipped"
+                {{ trigger.id }} übersprungen: Die Wettervorhersage meldet {{ states(weather_entity) }}.
+                Nach dem Ende des Regens gilt eine 6-stündige Trocknungszeit.
+          - stop: "Aktuell Regen — Sitzung übersprungen"
 
   - choose:
       - conditions:
@@ -1081,12 +1081,12 @@ action:
         sequence:
           - service: notify.persistent_notification
             data:
-              title: "💧 {{ mower_display_name }} session skipped — wet lawn delay"
+              title: "💧 {{ mower_display_name }} Sitzung übersprungen — Trocknungszeit aktiv"
               message: >
-                {{ trigger.id }} skipped: lawn is still in its 6-hour dry-out period.
-                Rain was last recorded {{ (secs_since_rain | int / 3600) | round(1) }} hours ago.
-                {{ ((21600 - secs_since_rain | int) / 60) | int }} minutes remaining before mowing resumes.
-          - stop: "Wet lawn delay active — session skipped"
+                {{ trigger.id }} übersprungen: Der Rasen befindet sich noch in der 6-stündigen Trocknungszeit.
+                Regen wurde zuletzt vor {{ (secs_since_rain | int / 3600) | round(1) }} Stunden erkannt.
+                Es verbleiben {{ ((21600 - secs_since_rain | int) / 60) | int }} Minuten, bevor wieder gemäht werden darf.
+          - stop: "Trocknungszeit aktiv — Sitzung übersprungen"
 
   - choose:
       - conditions:
@@ -1103,12 +1103,12 @@ action:
         sequence:
           - service: notify.persistent_notification
             data:
-              title: "🌡️ {{ mower_display_name }} session skipped — temperature"
+              title: "🌡️ {{ mower_display_name }} Sitzung übersprungen — Temperatur"
               message: >
-                {{ trigger.id }} skipped: current temperature is
-                {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'not configured' }} °C.
-                Mowing only starts below {{ max_start_temperature }} °C.
-          - stop: "Temperature too high or unavailable — session skipped"
+                {{ trigger.id }} übersprungen: Die aktuelle Temperatur beträgt
+                {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
+                Der Mähvorgang startet nur unterhalb von {{ max_start_temperature }} °C.
+          - stop: "Temperatur zu hoch oder nicht verfügbar — Sitzung übersprungen"
 
   - choose:
       - conditions:
@@ -1139,17 +1139,17 @@ action:
         sequence:
           - service: notify.persistent_notification
             data:
-              title: "🔋 {{ mower_display_name }} session skipped — previous task may resume"
+              title: "🔋 {{ mower_display_name }} Sitzung übersprungen — vorherige Aufgabe könnte fortgesetzt werden"
               message: >
-                {{ trigger.id }} was skipped before changing area switches because a recent
-                low-battery unfinished-task resume condition was detected.
+                {{ trigger.id }} wurde vor dem Umschalten der Flächenschalter übersprungen, weil eine aktuelle
+                Low-Battery-/Unfinished-Task-Resume-Bedingung erkannt wurde.
 
-                Mower state: {{ states(mower_entity) }}
-                Charging: {{ states(mower_charging_binary_sensor) if mower_charging_binary_sensor | string | trim | length > 0 else 'not configured' }}
-                Activity: {{ states(mower_activity_mode_sensor) if mower_activity_mode_sensor | string | trim | length > 0 else 'not configured' }}
-                Last error: {{ states(mower_last_error_sensor) if mower_last_error_sensor | string | trim | length > 0 else 'not configured' }}
-                Last error code: {{ states(mower_last_error_code_sensor) if mower_last_error_code_sensor | string | trim | length > 0 else 'not configured' }}
-          - stop: "Recent low-battery unfinished-task condition detected"
+                Mäherstatus: {{ states(mower_entity) }}
+                Lädt: {{ states(mower_charging_binary_sensor) if mower_charging_binary_sensor | string | trim | length > 0 else 'nicht konfiguriert' }}
+                Aktivität: {{ states(mower_activity_mode_sensor) if mower_activity_mode_sensor | string | trim | length > 0 else 'nicht konfiguriert' }}
+                Letzter Fehler: {{ states(mower_last_error_sensor) if mower_last_error_sensor | string | trim | length > 0 else 'nicht konfiguriert' }}
+                Letzter Fehlercode: {{ states(mower_last_error_code_sensor) if mower_last_error_code_sensor | string | trim | length > 0 else 'nicht konfiguriert' }}
+          - stop: "Aktuelle Low-Battery-/Unfinished-Task-Bedingung erkannt"
 
   - choose:
       - conditions:
@@ -1162,21 +1162,21 @@ action:
         sequence:
           - service: notify.persistent_notification
             data:
-              title: "⚠️ {{ mower_display_name }} session skipped — zone switch missing"
+              title: "⚠️ {{ mower_display_name }} Sitzung übersprungen — Zonenschalter fehlt"
               message: >
-                Active Zone Count is {{ zone_mod }}, but one or more zone switch inputs
-                inside that active range are blank.
-          - stop: "One or more active zone switches are missing"
+                Active Zone Count ist {{ zone_mod }}, aber mindestens ein Zonenschalter
+                innerhalb dieses aktiven Bereichs ist nicht konfiguriert.
+          - stop: "Ein oder mehrere aktive Zonenschalter fehlen"
 
   - service: notify.persistent_notification
     data:
-      title: "🌿 {{ mower_display_name }} starting — {{ trigger.id }}"
+      title: "🌿 {{ mower_display_name }} startet — {{ trigger.id }}"
       message: >
-        Zone tracker at {{ current_zone }}, mowing {{ zone_a_name }} (zone {{ zone_a }})
-        {% if effective_zones_per_session | int >= 2 %} then {{ zone_b_name }} (zone {{ zone_b }}){% endif %}.
-        Forecast: {{ states(weather_entity) }}.
-        Temperature: {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'not configured' }} °C.
-        Maximum start temperature: {{ max_start_temperature }} °C.
+        Zonenzähler steht auf {{ current_zone }}, gemäht wird {{ zone_a_name }} (Zone {{ zone_a }})
+        {% if effective_zones_per_session | int >= 2 %}, danach {{ zone_b_name }} (Zone {{ zone_b }}){% endif %}.
+        Wettervorhersage: {{ states(weather_entity) }}.
+        Temperatur: {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
+        Maximale Starttemperatur: {{ max_start_temperature }} °C.
 
   - alias: "Turn off all active area switches before Zone A"
     service: switch.turn_off
@@ -1522,10 +1522,10 @@ action:
                     continue_on_error: true
                   - service: notify.persistent_notification
                     data:
-                      title: "▶️ {{ mower_display_name }} resumed — Zone A"
+                      title: "▶️ {{ mower_display_name }} fortgesetzt — Zone A"
                       message: >
-                        The mower paused shortly after starting {{ zone_a_name }}.
-                        A one-time continue command was sent.
+                        Der Mäher hat kurz nach dem Start von {{ zone_a_name }} pausiert.
+                        Ein einmaliger Fortsetzen-Befehl wurde gesendet.
               - conditions:
                   - condition: template
                     value_template: "{{ wait.trigger is not none and wait.trigger.id == 'rain' }}"
@@ -1540,11 +1540,11 @@ action:
                       datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
                   - service: notify.persistent_notification
                     data:
-                      title: "🌧️ {{ mower_display_name }} recalled during Zone A startup"
+                      title: "🌧️ {{ mower_display_name }} während Zone-A-Start zurückgerufen"
                       message: >
-                        Rain was detected during startup for {{ zone_a_name }}.
-                        The mower was sent to dock and the zone tracker was not advanced.
-                  - stop: "Rain detected during startup recovery window"
+                        Während des Starts von {{ zone_a_name }} wurde Regen erkannt.
+                        Der Mäher wurde zur Ladestation geschickt und der Zonenzähler wurde nicht weitergesetzt.
+                  - stop: "Regen während des Start-/Wiederaufnahmefensters erkannt"
 
   - alias: "Wait for Zone A to complete, timeout, or rain to interrupt"
     wait_for_trigger:
@@ -1618,10 +1618,10 @@ action:
               datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
           - service: notify.persistent_notification
             data:
-              title: "✅ {{ mower_display_name }} finished — {{ zone_a_name }}"
+              title: "✅ {{ mower_display_name }} abgeschlossen — {{ zone_a_name }}"
               message: >
-                Zone {{ zone_a }} ({{ zone_a_name }}) completed.
-                Zone tracker advanced to {{ zone_a }}.
+                Zone {{ zone_a }} ({{ zone_a_name }}) wurde abgeschlossen.
+                Zonenzähler wurde auf {{ zone_a }} weitergesetzt.
       - conditions:
           - condition: template
             value_template: "{{ wait.trigger is not none and wait.trigger.id == 'rain' }}"
@@ -1633,11 +1633,11 @@ action:
               datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
           - service: notify.persistent_notification
             data:
-              title: "🌧️ {{ mower_display_name }} recalled mid-mow — Zone A"
+              title: "🌧️ {{ mower_display_name }} während des Mähens zurückgerufen — Zone A"
               message: >
-                Rain detected while mowing {{ zone_a_name }}. The mower was sent to dock.
-                Zone tracker stays at {{ current_zone }}.
-                A 6-hour dry-out delay is now active.
+                Während des Mähens von {{ zone_a_name }} wurde Regen erkannt. Der Mäher wurde zur Ladestation geschickt.
+                Zonenzähler bleibt bei {{ current_zone }}.
+                Die 6-stündige Trocknungszeit ist jetzt aktiv.
 
   - choose:
       - conditions:
@@ -1662,13 +1662,13 @@ action:
                       datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
                   - service: notify.persistent_notification
                     data:
-                      title: "🌧️ {{ mower_display_name }} Zone B skipped — rain"
+                      title: "🌧️ {{ mower_display_name }} Zone B übersprungen — Regen"
                       message: >
-                        Rain detected before Zone B. Skipping {{ zone_b_name }}.
-                        Forecast: {{ states(weather_entity) }}.
-                        Zone tracker stays at {{ zone_a }}.
-                        A 6-hour dry-out delay is now active.
-                  - stop: "Rain detected before Zone B"
+                        Vor Zone B wurde Regen erkannt. {{ zone_b_name }} wird übersprungen.
+                        Wettervorhersage: {{ states(weather_entity) }}.
+                        Zonenzähler bleibt bei {{ zone_a }}.
+                        Die 6-stündige Trocknungszeit ist jetzt aktiv.
+                  - stop: "Regen vor Zone B erkannt"
 
           - choose:
               - conditions:
@@ -1685,16 +1685,16 @@ action:
                 sequence:
                   - service: notify.persistent_notification
                     data:
-                      title: "🌡️ {{ mower_display_name }} Zone B skipped — temperature"
+                      title: "🌡️ {{ mower_display_name }} Zone B übersprungen — Temperatur"
                       message: >
-                        Zone B skipped before starting {{ zone_b_name }}.
+                        Zone B wurde vor dem Start von {{ zone_b_name }} übersprungen.
 
-                        Current temperature:
-                        {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'not configured' }} °C.
+                        Aktuelle Temperatur:
+                        {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
 
-                        Mowing only starts below {{ max_start_temperature }} °C.
-                        Zone tracker stays at {{ zone_a }}.
-                  - stop: "Temperature too high or unavailable before Zone B"
+                        Der Mähvorgang startet nur unterhalb von {{ max_start_temperature }} °C.
+                        Zonenzähler bleibt bei {{ zone_a }}.
+                  - stop: "Temperatur vor Zone B zu hoch oder nicht verfügbar"
 
           - choose:
               - conditions:
@@ -2042,10 +2042,10 @@ action:
                                     continue_on_error: true
                                   - service: notify.persistent_notification
                                     data:
-                                      title: "▶️ {{ mower_display_name }} resumed — Zone B"
+                                      title: "▶️ {{ mower_display_name }} fortgesetzt — Zone B"
                                       message: >
-                                        The mower paused shortly after starting {{ zone_b_name }}.
-                                        A one-time continue command was sent.
+                                        Der Mäher hat kurz nach dem Start von {{ zone_b_name }} pausiert.
+                                        Ein einmaliger Fortsetzen-Befehl wurde gesendet.
                               - conditions:
                                   - condition: template
                                     value_template: "{{ wait.trigger is not none and wait.trigger.id == 'rain' }}"
@@ -2060,11 +2060,11 @@ action:
                                       datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
                                   - service: notify.persistent_notification
                                     data:
-                                      title: "🌧️ {{ mower_display_name }} recalled during Zone B startup"
+                                      title: "🌧️ {{ mower_display_name }} während Zone-B-Start zurückgerufen"
                                       message: >
-                                        Rain was detected during startup for {{ zone_b_name }}.
-                                        The mower was sent to dock and the zone tracker was not advanced.
-                                  - stop: "Rain detected during startup recovery window"
+                                        Während des Starts von {{ zone_b_name }} wurde Regen erkannt.
+                                        Der Mäher wurde zur Ladestation geschickt und der Zonenzähler wurde nicht weitergesetzt.
+                                  - stop: "Regen während des Start-/Wiederaufnahmefensters erkannt"
 
                   - alias: "Wait for Zone B to complete, timeout, or rain to interrupt"
                     wait_for_trigger:
@@ -2138,10 +2138,10 @@ action:
                               datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
                           - service: notify.persistent_notification
                             data:
-                              title: "✅ {{ mower_display_name }} finished — {{ zone_b_name }}"
+                              title: "✅ {{ mower_display_name }} abgeschlossen — {{ zone_b_name }}"
                               message: >
-                                Zone {{ zone_b }} ({{ zone_b_name }}) completed.
-                                Zone tracker advanced to {{ zone_b }}.
+                                Zone {{ zone_b }} ({{ zone_b_name }}) wurde abgeschlossen.
+                                Zonenzähler wurde auf {{ zone_b }} weitergesetzt.
                       - conditions:
                           - condition: template
                             value_template: "{{ wait.trigger is not none and wait.trigger.id == 'rain' }}"
@@ -2153,8 +2153,8 @@ action:
                               datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
                           - service: notify.persistent_notification
                             data:
-                              title: "🌧️ {{ mower_display_name }} recalled mid-mow — Zone B"
+                              title: "🌧️ {{ mower_display_name }} während des Mähens zurückgerufen — Zone B"
                               message: >
-                                Rain detected while mowing {{ zone_b_name }}. The mower was sent to dock.
-                                Zone tracker stays at {{ zone_a }}.
-                                A 6-hour dry-out delay is now active.
+                                Während des Mähens von {{ zone_b_name }} wurde Regen erkannt. Der Mäher wurde zur Ladestation geschickt.
+                                Zonenzähler bleibt bei {{ zone_a }}.
+                                Die 6-stündige Trocknungszeit ist jetzt aktiv.
