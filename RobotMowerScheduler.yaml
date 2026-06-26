@@ -509,6 +509,17 @@ blueprint:
               step: 1
               unit_of_measurement: h
               mode: slider
+        dry_run_mode:
+          name: Dry-Run/Test Mode
+          description: >
+            If enabled, the scheduler evaluates the configured start conditions and
+            sends a test notification, but does not change area switches, does not
+            apply mower settings, does not start the mower, and does not update the
+            Last Run helper. The Wildlife Safety sun schedule is not affected.
+          default: false
+          selector:
+            boolean: {}
+
         post_start_pause_resume_window:
           name: Immediate Pause Recovery Window (seconds)
           description: Watch briefly after start; if the mower becomes paused, send one continue command.
@@ -939,6 +950,7 @@ variables:
   zone_duration: !input zone_duration
   inter_zone_rest: !input inter_zone_rest
   minimum_time_between_mows: !input minimum_time_between_mows
+  dry_run_mode: !input dry_run_mode
   active_zone_count: !input active_zone_count
   post_start_pause_resume_window: !input post_start_pause_resume_window
   sw1: !input zone_1_switch
@@ -1270,6 +1282,33 @@ action:
                 Active Zone Count ist {{ zone_mod }}, aber mindestens ein Zonenschalter
                 innerhalb dieses aktiven Bereichs ist nicht konfiguriert.
           - stop: "Ein oder mehrere aktive Zonenschalter fehlen"
+
+  - choose:
+      - conditions:
+          - condition: template
+            alias: "Stop before mower actions when Dry-Run/Test Mode is enabled"
+            value_template: "{{ dry_run_mode | bool }}"
+        sequence:
+          - service: notify.persistent_notification
+            data:
+              title: "🧪 {{ mower_display_name }} Dry-Run — Startbedingungen erfüllt"
+              message: >
+                Dry-Run/Testmodus ist aktiv. Der Scheduler hätte jetzt einen Mähvorgang gestartet,
+                führt aber keine Änderungen aus.
+
+                Auslöser: {{ trigger.id }}.
+                Zonenzähler steht auf {{ current_zone }}.
+                Geplante Zone A: {{ zone_a_name }} (Zone {{ zone_a }}).
+                {% if effective_zones_per_session | int >= 2 %}Geplante Zone B: {{ zone_b_name }} (Zone {{ zone_b }}).{% else %}Zone B ist für diese Sitzung nicht geplant.{% endif %}
+
+                Wettervorhersage: {{ states(weather_entity) }}.
+                Temperatur: {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
+                Maximale Starttemperatur: {{ max_start_temperature }} °C.
+                Mindestabstand zwischen Mähvorgängen: {{ minimum_time_between_mows }} Stunden.
+
+                Es wurden keine Zonenschalter geändert, keine Mäher-Einstellungen gesetzt,
+                kein Mähvorgang gestartet und der Last-Run-Helper wurde nicht aktualisiert.
+          - stop: "Dry-Run/Testmodus aktiv — keine Mäheraktionen ausgeführt"
 
   - service: notify.persistent_notification
     data:
