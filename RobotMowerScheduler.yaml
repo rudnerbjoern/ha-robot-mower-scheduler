@@ -45,9 +45,10 @@ blueprint:
   source_url: https://community.home-assistant.io
 
   input:
-    mower_section:
-      name: Mower
+    basic_setup_section:
+      name: Basic Setup
       icon: mdi:robot-mower
+      description: Core mower entities and naming used by the scheduler.
       input:
         mower_entity:
           name: Mower Entity
@@ -63,7 +64,6 @@ blueprint:
           default: Mower
           selector:
             text: {}
-
         manual_start_button:
           name: Manual Start Next Mow Button
           description: input_button helper used to manually start the next mow using this blueprint's full safety logic.
@@ -72,485 +72,10 @@ blueprint:
             entity:
               domain: input_button
 
-    status_section:
-      name: Mower Status / Resume Protection
-      icon: mdi:shield-alert
-      collapsed: true
-      input:
-        mower_last_error_sensor:
-          name: Last Error Sensor
-          description: Optional Mammotion Last Error sensor. Used only with recency checks because this may be historical.
-          default: ""
-          selector:
-            entity:
-              domain: sensor
-
-        mower_last_error_time_sensor:
-          name: Last Error Time Sensor
-          description: Optional timestamp sensor for when the last error occurred. Preferred over last_changed.
-          default: ""
-          selector:
-            entity:
-              domain: sensor
-
-        mower_last_error_code_sensor:
-          name: Last Error Code Sensor
-          description: Optional Mammotion error-code sensor. Useful when the text says Error message not found.
-          default: ""
-          selector:
-            entity:
-              domain: sensor
-
-        low_battery_resume_error_codes:
-          name: Low-Battery Resume Error Codes
-          description: >
-            Optional comma-separated error codes that mean low battery / unfinished task will resume.
-            Leave blank to use text matching only. Verify codes for your mower/integration.
-          default: ""
-          selector:
-            text: {}
-
-        mower_charging_binary_sensor:
-          name: Charging Binary Sensor
-          description: Optional binary_sensor that is on when the mower is charging.
-          default: ""
-          selector:
-            entity:
-              domain: binary_sensor
-
-        mower_activity_mode_sensor:
-          name: Activity Mode Sensor
-          description: Optional activity/status sensor, such as MODE_WORKING, MODE_CHARGING, or similar.
-          default: ""
-          selector:
-            entity:
-              domain: sensor
-
-        mower_progress_sensor:
-          name: Mower Progress Sensor
-          description: Optional progress sensor used to detect when a mowing task has completed.
-          default: ""
-          selector:
-            entity:
-              domain: sensor
-
-        mower_time_left_sensor:
-          name: Mower Time Left Sensor
-          description: Optional time-left sensor used as a secondary completion signal.
-          default: ""
-          selector:
-            entity:
-              domain: sensor
-
-        mower_task_status_sensor:
-          name: Mower Task Area Status Sensor
-          description: Optional task-area status sensor. If it reports COMPLETE, the zone tracker advances immediately.
-          default: ""
-          selector:
-            entity:
-              domain: sensor
-
-        mower_battery_level_sensor:
-          name: Mower Battery Level Sensor
-          description: >
-            Optional battery level sensor. If configured, Zone A and Zone B only
-            start when the battery level is at or above the configured minimum.
-            If configured but unavailable or invalid, the start is skipped for safety.
-          default: ""
-          selector:
-            entity:
-              domain: sensor
-              device_class: battery
-
-        minimum_battery_before_start:
-          name: Minimum Battery Before Start
-          description: >
-            Minimum battery level required before starting Zone A or Zone B.
-            This check is disabled when no battery sensor is configured.
-          default: 80
-          selector:
-            number:
-              min: 0
-              max: 100
-              step: 5
-              unit_of_measurement: "%"
-              mode: slider
-
-        mower_start_state_check_enabled:
-          name: Mower State Check Before Start
-          description: >
-            If enabled, Zone A and Zone B only start when the lawn_mower entity
-            is in one of the configured allowed states. This helps prevent starts
-            while the mower is already mowing, returning, paused, in error, or unavailable.
-          default: true
-          selector:
-            boolean: {}
-
-        allowed_mower_states_before_start:
-          name: Allowed Mower States Before Start
-          description: >
-            Mower states that are allowed before starting Zone A or Zone B.
-            The default allows starts only when the mower is docked or idle.
-          default:
-            - docked
-            - idle
-          selector:
-            select:
-              multiple: true
-              options:
-                - label: "docked"
-                  value: "docked"
-                - label: "idle"
-                  value: "idle"
-                - label: "paused"
-                  value: "paused"
-                - label: "returning"
-                  value: "returning"
-                - label: "mowing"
-                  value: "mowing"
-                - label: "error"
-                  value: "error"
-
-        resume_error_guard_hours:
-          name: Low-Battery Resume Error Guard Time
-          description: How long a recent matching low-battery/resume error should block starting a new scheduled task.
-          default: 6
-          selector:
-            number:
-              min: 1
-              max: 24
-              step: 1
-              unit_of_measurement: h
-              mode: slider
-
-    zone_switches_section:
-      name: Zone Area Switches
-      icon: mdi:toggle-switch
-      description: Select the Mammotion area switch for each zone. Only the first Active Zone Count switches are used.
-      collapsed: true
-      input:
-        zone_1_switch:
-          name: "Zone 1 — Area Switch"
-          description: >
-            Mammotion area switch for zone 1. This switch is enabled when zone 1 is selected for
-            mowing.
-          default: ""
-          selector:
-            entity:
-              domain: switch
-              integration: mammotion
-
-        zone_2_switch:
-          name: "Zone 2 — Area Switch"
-          description: >
-            Mammotion area switch for zone 2. This switch is enabled when zone 2 is selected for
-            mowing.
-          default: ""
-          selector:
-            entity:
-              domain: switch
-              integration: mammotion
-
-        zone_3_switch:
-          name: "Zone 3 — Area Switch"
-          description: >
-            Mammotion area switch for zone 3. This switch is enabled when zone 3 is selected for
-            mowing.
-          default: ""
-          selector:
-            entity:
-              domain: switch
-              integration: mammotion
-
-        zone_4_switch:
-          name: "Zone 4 — Area Switch"
-          description: >
-            Mammotion area switch for zone 4. This switch is enabled when zone 4 is selected for
-            mowing.
-          default: ""
-          selector:
-            entity:
-              domain: switch
-              integration: mammotion
-
-        zone_5_switch:
-          name: "Zone 5 — Area Switch"
-          description: >
-            Mammotion area switch for zone 5. This switch is enabled when zone 5 is selected for
-            mowing.
-          default: ""
-          selector:
-            entity:
-              domain: switch
-              integration: mammotion
-
-        zone_6_switch:
-          name: "Zone 6 — Area Switch"
-          description: >
-            Mammotion area switch for zone 6. This switch is enabled when zone 6 is selected for
-            mowing.
-          default: ""
-          selector:
-            entity:
-              domain: switch
-              integration: mammotion
-
-    zone_names_section:
-      name: Zone Display Names
-      icon: mdi:tag-text
-      collapsed: true
-      input:
-        zone_1_name:
-          name: "Zone 1 — Display Name"
-          description: >
-            Display name used in notifications for zone 1.
-          default: "Zone 1"
-          selector:
-            text: {}
-
-        zone_2_name:
-          name: "Zone 2 — Display Name"
-          description: >
-            Display name used in notifications for zone 2.
-          default: "Zone 2"
-          selector:
-            text: {}
-
-        zone_3_name:
-          name: "Zone 3 — Display Name"
-          description: >
-            Display name used in notifications for zone 3.
-          default: "Zone 3"
-          selector:
-            text: {}
-
-        zone_4_name:
-          name: "Zone 4 — Display Name"
-          description: >
-            Display name used in notifications for zone 4.
-          default: "Zone 4"
-          selector:
-            text: {}
-
-        zone_5_name:
-          name: "Zone 5 — Display Name"
-          description: >
-            Display name used in notifications for zone 5.
-          default: "Zone 5"
-          selector:
-            text: {}
-
-        zone_6_name:
-          name: "Zone 6 — Display Name"
-          description: >
-            Display name used in notifications for zone 6.
-          default: "Zone 6"
-          selector:
-            text: {}
-
-    weather_section:
-      name: Weather & Rain
-      icon: mdi:weather-rainy
-      input:
-        weather_entity:
-          name: Forecast Weather Entity
-          description: Sessions are skipped when state is rainy, pouring, lightning-rainy, hail, snowy-rainy, or exceptional.
-          default: ""
-          selector:
-            entity:
-              domain: weather
-        temperature_sensor:
-          name: Temperature Sensor
-          description: >
-            Optional temperature sensor used to prevent mowing when it is too warm.
-            If configured, the mower only starts when the current temperature is below
-            the configured maximum start temperature.
-          default: ""
-          selector:
-            entity:
-              filter:
-                domain: sensor
-                device_class: temperature
-        max_start_temperature:
-          name: Maximum Start Temperature
-          description: >
-            Mowing is only started when the current temperature is below this value.
-            If a temperature sensor is configured but unavailable or invalid, the session
-            is skipped for safety.
-          default: 28
-          selector:
-            number:
-              min: 0
-              max: 45
-              step: 0.5
-              unit_of_measurement: "°C"
-              mode: slider
-
-        wet_lawn_dry_out_delay_hours:
-          name: Wet Lawn Dry-Out Delay
-          description: >
-            Dry-out delay in hours after rain was detected. During this time,
-            scheduled and manual mowing starts are skipped. Set to 0 to disable
-            the dry-out delay after rain.
-          default: 6
-          selector:
-            number:
-              min: 0
-              max: 24
-              step: 1
-              unit_of_measurement: h
-              mode: slider
-
-    session_1_section:
-      name: "Session 1"
-      icon: mdi:clock-start
-      input:
-        mow_time_1:
-          name: "Session 1 — Start Time"
-          description: >
-            Start time for scheduled mowing session 1.
-          default: "04:00:00"
-          selector:
-            time: {}
-        days_session_1:
-          name: "Session 1 — Active Days"
-          description: >
-            Weekdays on which scheduled mowing session 1 is allowed to run.
-          default: [mon, tue, wed, thu, fri, sat, sun]
-          selector:
-            select:
-              multiple: true
-              options:
-                - label: "Monday"
-                  value: mon
-                - label: "Tuesday"
-                  value: tue
-                - label: "Wednesday"
-                  value: wed
-                - label: "Thursday"
-                  value: thu
-                - label: "Friday"
-                  value: fri
-                - label: "Saturday"
-                  value: sat
-                - label: "Sunday"
-                  value: sun
-
-    session_2_section:
-      name: "Session 2"
-      icon: mdi:clock-start
-      input:
-        mow_time_2:
-          name: "Session 2 — Start Time"
-          description: >
-            Start time for scheduled mowing session 2.
-          default: "18:30:00"
-          selector:
-            time: {}
-        days_session_2:
-          name: "Session 2 — Active Days"
-          description: >
-            Weekdays on which scheduled mowing session 2 is allowed to run.
-          default: [mon, tue, wed, thu, fri, sat, sun]
-          selector:
-            select:
-              multiple: true
-              options:
-                - label: "Monday"
-                  value: mon
-                - label: "Tuesday"
-                  value: tue
-                - label: "Wednesday"
-                  value: wed
-                - label: "Thursday"
-                  value: thu
-                - label: "Friday"
-                  value: fri
-                - label: "Saturday"
-                  value: sat
-                - label: "Sunday"
-                  value: sun
-
-    session_3_section:
-      name: "Session 3 (optional)"
-      icon: mdi:clock-start
-      collapsed: true
-      input:
-        mow_time_3:
-          name: "Session 3 — Start Time"
-          description: >
-            Start time for optional scheduled mowing session 3. Leave the active days empty to
-            disable this session.
-          default: "04:00:00"
-          selector:
-            time: {}
-        days_session_3:
-          name: "Session 3 — Active Days"
-          description: >
-            Weekdays on which optional scheduled mowing session 3 is allowed to run. Leave empty
-            to disable this session.
-          default: []
-          selector:
-            select:
-              multiple: true
-              options:
-                - label: "Monday"
-                  value: mon
-                - label: "Tuesday"
-                  value: tue
-                - label: "Wednesday"
-                  value: wed
-                - label: "Thursday"
-                  value: thu
-                - label: "Friday"
-                  value: fri
-                - label: "Saturday"
-                  value: sat
-                - label: "Sunday"
-                  value: sun
-
-    session_4_section:
-      name: "Session 4 (optional)"
-      icon: mdi:clock-start
-      collapsed: true
-      input:
-        mow_time_4:
-          name: "Session 4 — Start Time"
-          description: >
-            Start time for optional scheduled mowing session 4. Leave the active days empty to
-            disable this session.
-          default: "18:30:00"
-          selector:
-            time: {}
-        days_session_4:
-          name: "Session 4 — Active Days"
-          description: >
-            Weekdays on which optional scheduled mowing session 4 is allowed to run. Leave empty
-            to disable this session.
-          default: []
-          selector:
-            select:
-              multiple: true
-              options:
-                - label: "Monday"
-                  value: mon
-                - label: "Tuesday"
-                  value: tue
-                - label: "Wednesday"
-                  value: wed
-                - label: "Thursday"
-                  value: thu
-                - label: "Friday"
-                  value: fri
-                - label: "Saturday"
-                  value: sat
-                - label: "Sunday"
-                  value: sun
-
-    helpers_section:
-      name: Helpers
+    required_helpers_section:
+      name: Required Helpers
       icon: mdi:database
-      collapsed: true
+      description: Helper entities used to track zone rotation, manual blocking, garden usage, last run time, and rain dry-out state.
       input:
         zone_tracker:
           name: Zone Tracker (input_number)
@@ -597,10 +122,10 @@ blueprint:
             entity:
               domain: input_datetime
 
-    behaviour_section:
-      name: Mowing Behaviour
-      icon: mdi:tune
-      collapsed: true
+    mowing_zones_section:
+      name: Mowing Zones
+      icon: mdi:map-marker-path
+      description: Configure the Mammotion area switches and display names used for zone rotation.
       input:
         active_zone_count:
           name: Active Zone Count
@@ -612,6 +137,252 @@ blueprint:
               max: 6
               step: 1
               mode: slider
+        zone_1_switch:
+          name: "Zone 1 — Area Switch"
+          description: >
+            Mammotion area switch for zone 1. This switch is enabled when zone 1 is selected for
+            mowing.
+          default: ""
+          selector:
+            entity:
+              domain: switch
+              integration: mammotion
+
+        zone_1_name:
+          name: "Zone 1 — Display Name"
+          description: >
+            Display name used in notifications for zone 1.
+          default: "Zone 1"
+          selector:
+            text: {}
+        zone_2_switch:
+          name: "Zone 2 — Area Switch"
+          description: >
+            Mammotion area switch for zone 2. This switch is enabled when zone 2 is selected for
+            mowing.
+          default: ""
+          selector:
+            entity:
+              domain: switch
+              integration: mammotion
+
+        zone_2_name:
+          name: "Zone 2 — Display Name"
+          description: >
+            Display name used in notifications for zone 2.
+          default: "Zone 2"
+          selector:
+            text: {}
+        zone_3_switch:
+          name: "Zone 3 — Area Switch"
+          description: >
+            Mammotion area switch for zone 3. This switch is enabled when zone 3 is selected for
+            mowing.
+          default: ""
+          selector:
+            entity:
+              domain: switch
+              integration: mammotion
+
+        zone_3_name:
+          name: "Zone 3 — Display Name"
+          description: >
+            Display name used in notifications for zone 3.
+          default: "Zone 3"
+          selector:
+            text: {}
+        zone_4_switch:
+          name: "Zone 4 — Area Switch"
+          description: >
+            Mammotion area switch for zone 4. This switch is enabled when zone 4 is selected for
+            mowing.
+          default: ""
+          selector:
+            entity:
+              domain: switch
+              integration: mammotion
+
+        zone_4_name:
+          name: "Zone 4 — Display Name"
+          description: >
+            Display name used in notifications for zone 4.
+          default: "Zone 4"
+          selector:
+            text: {}
+        zone_5_switch:
+          name: "Zone 5 — Area Switch"
+          description: >
+            Mammotion area switch for zone 5. This switch is enabled when zone 5 is selected for
+            mowing.
+          default: ""
+          selector:
+            entity:
+              domain: switch
+              integration: mammotion
+
+        zone_5_name:
+          name: "Zone 5 — Display Name"
+          description: >
+            Display name used in notifications for zone 5.
+          default: "Zone 5"
+          selector:
+            text: {}
+        zone_6_switch:
+          name: "Zone 6 — Area Switch"
+          description: >
+            Mammotion area switch for zone 6. This switch is enabled when zone 6 is selected for
+            mowing.
+          default: ""
+          selector:
+            entity:
+              domain: switch
+              integration: mammotion
+
+        zone_6_name:
+          name: "Zone 6 — Display Name"
+          description: >
+            Display name used in notifications for zone 6.
+          default: "Zone 6"
+          selector:
+            text: {}
+    schedule_section:
+      name: Schedule
+      icon: mdi:calendar-clock
+      description: Configure up to four daily mowing sessions and the weekdays on which each session may run.
+      input:
+        mow_time_1:
+          name: "Session 1 — Start Time"
+          description: >
+            Start time for scheduled mowing session 1.
+          default: "04:00:00"
+          selector:
+            time: {}
+        days_session_1:
+          name: "Session 1 — Active Days"
+          description: >
+            Weekdays on which scheduled mowing session 1 is allowed to run.
+          default: [mon, tue, wed, thu, fri, sat, sun]
+          selector:
+            select:
+              multiple: true
+              options:
+              - label: "Monday"
+                value: mon
+              - label: "Tuesday"
+                value: tue
+              - label: "Wednesday"
+                value: wed
+              - label: "Thursday"
+                value: thu
+              - label: "Friday"
+                value: fri
+              - label: "Saturday"
+                value: sat
+              - label: "Sunday"
+                value: sun
+
+        mow_time_2:
+          name: "Session 2 — Start Time"
+          description: >
+            Start time for scheduled mowing session 2.
+          default: "18:30:00"
+          selector:
+            time: {}
+        days_session_2:
+          name: "Session 2 — Active Days"
+          description: >
+            Weekdays on which scheduled mowing session 2 is allowed to run.
+          default: [mon, tue, wed, thu, fri, sat, sun]
+          selector:
+            select:
+              multiple: true
+              options:
+              - label: "Monday"
+                value: mon
+              - label: "Tuesday"
+                value: tue
+              - label: "Wednesday"
+                value: wed
+              - label: "Thursday"
+                value: thu
+              - label: "Friday"
+                value: fri
+              - label: "Saturday"
+                value: sat
+              - label: "Sunday"
+                value: sun
+
+        mow_time_3:
+          name: "Session 3 — Start Time"
+          description: >
+            Start time for optional scheduled mowing session 3. Leave the active days empty to
+            disable this session.
+          default: "04:00:00"
+          selector:
+            time: {}
+        days_session_3:
+          name: "Session 3 — Active Days"
+          description: >
+            Weekdays on which optional scheduled mowing session 3 is allowed to run. Leave empty
+            to disable this session.
+          default: []
+          selector:
+            select:
+              multiple: true
+              options:
+              - label: "Monday"
+                value: mon
+              - label: "Tuesday"
+                value: tue
+              - label: "Wednesday"
+                value: wed
+              - label: "Thursday"
+                value: thu
+              - label: "Friday"
+                value: fri
+              - label: "Saturday"
+                value: sat
+              - label: "Sunday"
+                value: sun
+
+        mow_time_4:
+          name: "Session 4 — Start Time"
+          description: >
+            Start time for optional scheduled mowing session 4. Leave the active days empty to
+            disable this session.
+          default: "18:30:00"
+          selector:
+            time: {}
+        days_session_4:
+          name: "Session 4 — Active Days"
+          description: >
+            Weekdays on which optional scheduled mowing session 4 is allowed to run. Leave empty
+            to disable this session.
+          default: []
+          selector:
+            select:
+              multiple: true
+              options:
+              - label: "Monday"
+                value: mon
+              - label: "Tuesday"
+                value: tue
+              - label: "Wednesday"
+                value: wed
+              - label: "Thursday"
+                value: thu
+              - label: "Friday"
+                value: fri
+              - label: "Saturday"
+                value: sat
+              - label: "Sunday"
+                value: sun
+
+    mowing_plan_section:
+      name: Mowing Plan
+      icon: mdi:tune-variant
+      description: Controls how many zones are mowed per session, how long a zone may run, and how much time must pass between successful mowing runs.
+      input:
         zones_per_session:
           name: Zones Per Session
           description: >
@@ -663,57 +434,66 @@ blueprint:
               step: 1
               unit_of_measurement: h
               mode: slider
-        dry_run_mode:
-          name: Dry-Run/Test Mode
-          description: >
-            If enabled, the scheduler evaluates the configured start conditions and
-            sends a test notification, but does not change area switches, does not
-            apply mower settings, does not start the mower, and does not update the
-            Last Run helper. The Wildlife Safety sun schedule is not affected.
-          default: false
-          selector:
-            boolean: {}
-
-        post_start_pause_resume_window:
-          name: Immediate Pause Recovery Window (seconds)
-          description: Watch briefly after start; if the mower becomes paused, send one continue command.
-          default: 75
-          selector:
-            number:
-              min: 0
-              max: 180
-              step: 5
-              unit_of_measurement: s
-              mode: slider
-
-    new_integration_settings_section:
-      name: Mammotion Mowing Settings
-      icon: mdi:robot-mower-outline
-      description: >
-        Optional new-integration setting entities. Set the entity ID and desired value.
-        Blank entity IDs are skipped. Defaults match conservative mower settings.
-      collapsed: true
+    weather_lawn_protection_section:
+      name: Weather & Lawn Protection
+      icon: mdi:weather-rainy
+      description: Weather, rain dry-out, and temperature checks that can prevent mowing before a session starts.
       input:
-        blade_height_number_entity:
-          name: Blade Height Number Entity
-          description: >
-            Optional Mammotion number entity used to set the mower blade height before mowing.
+        weather_entity:
+          name: Forecast Weather Entity
+          description: Sessions are skipped when state is rainy, pouring, lightning-rainy, hail, snowy-rainy, or exceptional.
           default: ""
           selector:
             entity:
-              domain: number
-        mammotion_blade_height:
-          name: Blade Height (mm)
-          description: Normal blade height used when hot-weather blade height is disabled or not active.
-          default: 100
+              domain: weather
+        wet_lawn_dry_out_delay_hours:
+          name: Wet Lawn Dry-Out Delay
+          description: >
+            Dry-out delay in hours after rain was detected. During this time,
+            scheduled and manual mowing starts are skipped. Set to 0 to disable
+            the dry-out delay after rain.
+          default: 6
           selector:
             number:
-              min: 20
-              max: 100
+              min: 0
+              max: 24
               step: 1
-              unit_of_measurement: mm
+              unit_of_measurement: h
               mode: slider
 
+        temperature_sensor:
+          name: Temperature Sensor
+          description: >
+            Optional temperature sensor used to prevent mowing when it is too warm.
+            If configured, the mower only starts when the current temperature is below
+            the configured maximum start temperature.
+          default: ""
+          selector:
+            entity:
+              filter:
+                domain: sensor
+                device_class: temperature
+        max_start_temperature:
+          name: Maximum Start Temperature
+          description: >
+            Mowing is only started when the current temperature is below this value.
+            If a temperature sensor is configured but unavailable or invalid, the session
+            is skipped for safety.
+          default: 28
+          selector:
+            number:
+              min: 0
+              max: 45
+              step: 0.5
+              unit_of_measurement: "°C"
+              mode: slider
+
+    hot_weather_blade_height_section:
+      name: Hot Weather Blade Height
+      icon: mdi:thermometer-high
+      description: Optionally raises the blade height when the configured temperature threshold is reached.
+      collapsed: true
+      input:
         hot_weather_blade_height_enabled:
           name: Hot Weather Blade Height Enabled
           description: >
@@ -724,7 +504,6 @@ blueprint:
           default: false
           selector:
             boolean: {}
-
         hot_weather_blade_height_temperature:
           name: Hot Weather Blade Height Temperature
           description: >
@@ -743,6 +522,184 @@ blueprint:
           name: Hot Weather Blade Height (mm)
           description: Blade height used when hot-weather blade height is active.
           default: 80
+          selector:
+            number:
+              min: 20
+              max: 100
+              step: 1
+              unit_of_measurement: mm
+              mode: slider
+
+    wildlife_safety_section:
+      name: Wildlife Safety
+      icon: mdi:hedgehog
+      description: Controls the Mammotion Wildlife Safety mode, including optional sun-based switching.
+      collapsed: true
+      input:
+        wildlife_safety_select_entity:
+          name: Wildlife Safety Select Entity
+          description: >
+            Optional Mammotion Wildlife Safety select entity. If the sun-based
+            Wildlife Safety schedule is enabled, this entity is set to
+            low_speed_mowing at sunset and off at sunrise.
+          default: ""
+          selector:
+            entity:
+              domain: select
+
+        wildlife_safety_sun_schedule_enabled:
+          name: Wildlife Safety Sun Schedule Enabled
+          description: >
+            If enabled, Wildlife Safety is automatically set to low_speed_mowing
+            around sunset and off around sunrise. The exact timing can be adjusted
+            with the sunset and sunrise offset sliders. In this mode, the normal
+            mow-start setting for Wildlife Safety is not applied before Zone A or Zone B.
+          default: true
+          selector:
+            boolean: {}
+        wildlife_safety_sunset_offset_minutes:
+          name: Wildlife Safety Sunset Offset
+          description: >
+            Offset in minutes relative to sunset. Negative values run before sunset,
+            positive values run after sunset. Example: -30 means 30 minutes before sunset.
+          default: 0
+          selector:
+            number:
+              min: -60
+              max: 60
+              step: 5
+              unit_of_measurement: min
+              mode: slider
+
+        wildlife_safety_sunrise_offset_minutes:
+          name: Wildlife Safety Sunrise Offset
+          description: >
+            Offset in minutes relative to sunrise. Negative values run before sunrise,
+            positive values run after sunrise. Example: 30 means 30 minutes after sunrise.
+          default: 0
+          selector:
+            number:
+              min: -60
+              max: 60
+              step: 5
+              unit_of_measurement: min
+              mode: slider
+
+        wildlife_safety_option:
+          name: Wildlife Safety Option Before Mowing
+          description: >
+            Used only when the sun-based Wildlife Safety schedule is disabled.
+            If the sun schedule is enabled, Wildlife Safety is controlled by
+            sunrise and sunset instead.
+          default: "low_speed_mowing"
+          selector:
+            select:
+              options:
+              - label: "off"
+                value: "off"
+              - label: "stop_mowing"
+                value: "stop_mowing"
+              - label: "low_speed_mowing"
+                value: "low_speed_mowing"
+
+    start_safety_checks_section:
+      name: Start Safety Checks
+      icon: mdi:shield-check
+      description: Checks that must pass before the mower starts a new zone.
+      collapsed: true
+      input:
+        mower_battery_level_sensor:
+          name: Mower Battery Level Sensor
+          description: >
+            Optional battery level sensor. If configured, Zone A and Zone B only
+            start when the battery level is at or above the configured minimum.
+            If configured but unavailable or invalid, the start is skipped for safety.
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+              device_class: battery
+
+        minimum_battery_before_start:
+          name: Minimum Battery Before Start
+          description: >
+            Minimum battery level required before starting Zone A or Zone B.
+            This check is disabled when no battery sensor is configured.
+          default: 80
+          selector:
+            number:
+              min: 0
+              max: 100
+              step: 5
+              unit_of_measurement: "%"
+              mode: slider
+
+        mower_start_state_check_enabled:
+          name: Mower State Check Before Start
+          description: >
+            If enabled, Zone A and Zone B only start when the lawn_mower entity
+            is in one of the configured allowed states. This helps prevent starts
+            while the mower is already mowing, returning, paused, in error, or unavailable.
+          default: true
+          selector:
+            boolean: {}
+        allowed_mower_states_before_start:
+          name: Allowed Mower States Before Start
+          description: >
+            Mower states that are allowed before starting Zone A or Zone B.
+            The default allows starts only when the mower is docked or idle.
+          default:
+          - docked
+          - idle
+          selector:
+            select:
+              multiple: true
+              options:
+              - label: "docked"
+                value: "docked"
+              - label: "idle"
+                value: "idle"
+              - label: "paused"
+                value: "paused"
+              - label: "returning"
+                value: "returning"
+              - label: "mowing"
+                value: "mowing"
+              - label: "error"
+                value: "error"
+
+    testing_diagnostics_section:
+      name: Testing & Diagnostics
+      icon: mdi:test-tube
+      description: Options for safely testing scheduler decisions without starting the mower.
+      input:
+        dry_run_mode:
+          name: Dry-Run/Test Mode
+          description: >
+            If enabled, the scheduler evaluates the configured start conditions and
+            sends a test notification, but does not change area switches, does not
+            apply mower settings, does not start the mower, and does not update the
+            Last Run helper. The Wildlife Safety sun schedule is not affected.
+          default: false
+          selector:
+            boolean: {}
+    basic_mowing_settings_section:
+      name: Basic Mowing Settings
+      icon: mdi:robot-mower-outline
+      description: Common Mammotion mowing settings applied before starting a zone.
+      input:
+        blade_height_number_entity:
+          name: Blade Height Number Entity
+          description: >
+            Optional Mammotion number entity used to set the mower blade height before mowing.
+          default: ""
+          selector:
+            entity:
+              domain: number
+        mammotion_blade_height:
+          name: Blade Height (mm)
+          description: Normal blade height used when hot-weather blade height is disabled or not active.
+          default: 100
           selector:
             number:
               min: 20
@@ -772,6 +729,173 @@ blueprint:
               unit_of_measurement: m/s
               mode: slider
 
+        path_spacing_number_entity:
+          name: Path Spacing Number Entity
+          description: >
+            Optional Mammotion number entity used to set the mowing path spacing before mowing.
+          default: ""
+          selector:
+            entity:
+              domain: number
+        mammotion_path_spacing:
+          name: Path Spacing (cm)
+          description: >
+            Desired distance between mowing paths in centimeters.
+          default: 12
+          selector:
+            number:
+              min: 8
+              max: 30
+              step: 1
+              unit_of_measurement: cm
+              mode: slider
+
+    mower_switch_options_section:
+      name: Mower Switch Options
+      icon: mdi:toggle-switch-variant
+      description: Optional switch entities that can be enabled before mowing starts.
+      collapsed: true
+      input:
+        night_light_switch_entity:
+          name: Auto Lighting / Night Light Switch Entity
+          description: >
+            Optional Mammotion switch entity used to enable automatic lighting or night light
+            before mowing.
+          default: ""
+          selector:
+            entity:
+              domain: switch
+        rain_detection_during_mow_switch_entity:
+          name: Rain Detection During Mow Switch Entity
+          description: >
+            Optional Mammotion switch entity used to enable rain detection while mowing.
+          default: ""
+          selector:
+            entity:
+              domain: switch
+        rain_detection_mower_switch_entity:
+          name: Mower Rain Detection Switch Entity
+          description: >
+            Optional Mammotion switch entity used to enable the mower rain detection feature.
+          default: ""
+          selector:
+            entity:
+              domain: switch
+
+    completion_detection_section:
+      name: Completion Detection
+      icon: mdi:progress-check
+      description: Optional status sensors and startup pause recovery used to detect mowing completion and early pause conditions.
+      collapsed: true
+      input:
+        mower_progress_sensor:
+          name: Mower Progress Sensor
+          description: Optional progress sensor used to detect when a mowing task has completed.
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+
+        mower_time_left_sensor:
+          name: Mower Time Left Sensor
+          description: Optional time-left sensor used as a secondary completion signal.
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+
+        mower_task_status_sensor:
+          name: Mower Task Area Status Sensor
+          description: Optional task-area status sensor. If it reports COMPLETE, the zone tracker advances immediately.
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+
+        mower_activity_mode_sensor:
+          name: Activity Mode Sensor
+          description: Optional activity/status sensor, such as MODE_WORKING, MODE_CHARGING, or similar.
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+
+        post_start_pause_resume_window:
+          name: Immediate Pause Recovery Window (seconds)
+          description: Watch briefly after start; if the mower becomes paused, send one continue command.
+          default: 75
+          selector:
+            number:
+              min: 0
+              max: 180
+              step: 5
+              unit_of_measurement: s
+              mode: slider
+
+    resume_protection_section:
+      name: Resume Protection
+      icon: mdi:shield-alert
+      description: Advanced protection against interrupting a recent low-battery unfinished-task resume condition.
+      collapsed: true
+      input:
+        mower_last_error_sensor:
+          name: Last Error Sensor
+          description: Optional Mammotion Last Error sensor. Used only with recency checks because this may be historical.
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+
+        mower_last_error_time_sensor:
+          name: Last Error Time Sensor
+          description: Optional timestamp sensor for when the last error occurred. Preferred over last_changed.
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+
+        mower_last_error_code_sensor:
+          name: Last Error Code Sensor
+          description: Optional Mammotion error-code sensor. Useful when the text says Error message not found.
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+
+        low_battery_resume_error_codes:
+          name: Low-Battery Resume Error Codes
+          description: >
+            Optional comma-separated error codes that mean low battery / unfinished task will resume.
+            Leave blank to use text matching only. Verify codes for your mower/integration.
+          default: ""
+          selector:
+            text: {}
+        mower_charging_binary_sensor:
+          name: Charging Binary Sensor
+          description: Optional binary_sensor that is on when the mower is charging.
+          default: ""
+          selector:
+            entity:
+              domain: binary_sensor
+
+        resume_error_guard_hours:
+          name: Low-Battery Resume Error Guard Time
+          description: How long a recent matching low-battery/resume error should block starting a new scheduled task.
+          default: 6
+          selector:
+            number:
+              min: 1
+              max: 24
+              step: 1
+              unit_of_measurement: h
+              mode: slider
+
+    advanced_mammotion_settings_section:
+      name: Advanced Mammotion Settings
+      icon: mdi:cog-outline
+      description: Less frequently changed Mammotion settings for path behavior, order, obstacle handling, laps, traversal, and turnaround mode.
+      collapsed: true
+      input:
         cutting_path_angle_number_entity:
           name: Cutting Path Angle Number Entity
           description: >
@@ -814,27 +938,6 @@ blueprint:
               unit_of_measurement: "°"
               mode: slider
 
-        path_spacing_number_entity:
-          name: Path Spacing Number Entity
-          description: >
-            Optional Mammotion number entity used to set the mowing path spacing before mowing.
-          default: ""
-          selector:
-            entity:
-              domain: number
-        mammotion_path_spacing:
-          name: Path Spacing (cm)
-          description: >
-            Desired distance between mowing paths in centimeters.
-          default: 12
-          selector:
-            number:
-              min: 8
-              max: 30
-              step: 1
-              unit_of_measurement: cm
-              mode: slider
-
         start_progress_number_entity:
           name: Start Progress Number Entity (optional)
           description: >
@@ -873,12 +976,12 @@ blueprint:
           selector:
             select:
               options:
-                - label: "normal"
-                  value: "normal"
-                - label: "slow"
-                  value: "slow"
-                - label: "fast"
-                  value: "fast"
+              - label: "normal"
+                value: "normal"
+              - label: "slow"
+                value: "slow"
+              - label: "fast"
+                value: "fast"
 
         cutting_path_mode_select_entity:
           name: Cutting Path Mode Select Entity
@@ -896,14 +999,14 @@ blueprint:
           selector:
             select:
               options:
-                - label: "single_grid"
-                  value: "single_grid"
-                - label: "double_grid"
-                  value: "double_grid"
-                - label: "segment_grid"
-                  value: "segment_grid"
-                - label: "no_grid"
-                  value: "no_grid"
+              - label: "single_grid"
+                value: "single_grid"
+              - label: "double_grid"
+                value: "double_grid"
+              - label: "segment_grid"
+                value: "segment_grid"
+              - label: "no_grid"
+                value: "no_grid"
 
         cutting_path_angle_mode_select_entity:
           name: Cutting Path Angle Mode Select Entity
@@ -922,12 +1025,12 @@ blueprint:
           selector:
             select:
               options:
-                - label: "relative_angle"
-                  value: "relative_angle"
-                - label: "absolute_angle"
-                  value: "absolute_angle"
-                - label: "random_angle"
-                  value: "random_angle"
+              - label: "relative_angle"
+                value: "relative_angle"
+              - label: "absolute_angle"
+                value: "absolute_angle"
+              - label: "random_angle"
+                value: "random_angle"
 
         mow_order_select_entity:
           name: Mow Order Select Entity
@@ -946,10 +1049,10 @@ blueprint:
           selector:
             select:
               options:
-                - label: "border_first"
-                  value: "border_first"
-                - label: "grid_first"
-                  value: "grid_first"
+              - label: "border_first"
+                value: "border_first"
+              - label: "grid_first"
+                value: "grid_first"
 
         no_go_laps_select_entity:
           name: No-go Zone Mowing Laps Select Entity
@@ -967,16 +1070,16 @@ blueprint:
           selector:
             select:
               options:
-                - label: "none"
-                  value: "none"
-                - label: "one"
-                  value: "one"
-                - label: "two"
-                  value: "two"
-                - label: "three"
-                  value: "three"
-                - label: "four"
-                  value: "four"
+              - label: "none"
+                value: "none"
+              - label: "one"
+                value: "one"
+              - label: "two"
+                value: "two"
+              - label: "three"
+                value: "three"
+              - label: "four"
+                value: "four"
 
         obstacle_avoidance_select_entity:
           name: Obstacle Avoidance Mode Select Entity
@@ -995,12 +1098,12 @@ blueprint:
           selector:
             select:
               options:
-                - label: "direct_touch"
-                  value: "direct_touch"
-                - label: "no_touch"
-                  value: "no_touch"
-                - label: "sensitive"
-                  value: "sensitive"
+              - label: "direct_touch"
+                value: "direct_touch"
+              - label: "no_touch"
+                value: "no_touch"
+              - label: "sensitive"
+                value: "sensitive"
 
         perimeter_laps_select_entity:
           name: Perimeter Mowing Laps Select Entity
@@ -1018,16 +1121,16 @@ blueprint:
           selector:
             select:
               options:
-                - label: "none"
-                  value: "none"
-                - label: "one"
-                  value: "one"
-                - label: "two"
-                  value: "two"
-                - label: "three"
-                  value: "three"
-                - label: "four"
-                  value: "four"
+              - label: "none"
+                value: "none"
+              - label: "one"
+                value: "one"
+              - label: "two"
+                value: "two"
+              - label: "three"
+                value: "three"
+              - label: "four"
+                value: "four"
 
         traversal_mode_select_entity:
           name: Traversal Mode Select Entity
@@ -1045,10 +1148,10 @@ blueprint:
           selector:
             select:
               options:
-                - label: "direct"
-                  value: "direct"
-                - label: "follow_perimeter"
-                  value: "follow_perimeter"
+              - label: "direct"
+                value: "direct"
+              - label: "follow_perimeter"
+                value: "follow_perimeter"
 
         turnaround_mode_select_entity:
           name: Turnaround Mode Select Entity
@@ -1066,103 +1169,10 @@ blueprint:
           selector:
             select:
               options:
-                - label: "zero_turn"
-                  value: "zero_turn"
-                - label: "multipoint"
-                  value: "multipoint"
-
-        wildlife_safety_select_entity:
-          name: Wildlife Safety Select Entity
-          description: >
-            Optional Mammotion Wildlife Safety select entity. If the sun-based
-            Wildlife Safety schedule is enabled, this entity is set to
-            low_speed_mowing at sunset and off at sunrise.
-          default: ""
-          selector:
-            entity:
-              domain: select
-
-        wildlife_safety_sun_schedule_enabled:
-          name: Wildlife Safety Sun Schedule Enabled
-          description: >
-            If enabled, Wildlife Safety is automatically set to low_speed_mowing
-            around sunset and off around sunrise. The exact timing can be adjusted
-            with the sunset and sunrise offset sliders. In this mode, the normal
-            mow-start setting for Wildlife Safety is not applied before Zone A or Zone B.
-          default: true
-          selector:
-            boolean: {}
-
-        wildlife_safety_sunset_offset_minutes:
-          name: Wildlife Safety Sunset Offset
-          description: >
-            Offset in minutes relative to sunset. Negative values run before sunset,
-            positive values run after sunset. Example: -30 means 30 minutes before sunset.
-          default: 0
-          selector:
-            number:
-              min: -60
-              max: 60
-              step: 5
-              unit_of_measurement: min
-              mode: slider
-
-        wildlife_safety_sunrise_offset_minutes:
-          name: Wildlife Safety Sunrise Offset
-          description: >
-            Offset in minutes relative to sunrise. Negative values run before sunrise,
-            positive values run after sunrise. Example: 30 means 30 minutes after sunrise.
-          default: 0
-          selector:
-            number:
-              min: -60
-              max: 60
-              step: 5
-              unit_of_measurement: min
-              mode: slider
-
-        wildlife_safety_option:
-          name: Wildlife Safety Option Before Mowing
-          description: >
-            Used only when the sun-based Wildlife Safety schedule is disabled.
-            If the sun schedule is enabled, Wildlife Safety is controlled by
-            sunrise and sunset instead.
-          default: "low_speed_mowing"
-          selector:
-            select:
-              options:
-                - label: "off"
-                  value: "off"
-                - label: "stop_mowing"
-                  value: "stop_mowing"
-                - label: "low_speed_mowing"
-                  value: "low_speed_mowing"
-
-        night_light_switch_entity:
-          name: Auto Lighting / Night Light Switch Entity
-          description: >
-            Optional Mammotion switch entity used to enable automatic lighting or night light
-            before mowing.
-          default: ""
-          selector:
-            entity:
-              domain: switch
-        rain_detection_during_mow_switch_entity:
-          name: Rain Detection During Mow Switch Entity
-          description: >
-            Optional Mammotion switch entity used to enable rain detection while mowing.
-          default: ""
-          selector:
-            entity:
-              domain: switch
-        rain_detection_mower_switch_entity:
-          name: Mower Rain Detection Switch Entity
-          description: >
-            Optional Mammotion switch entity used to enable the mower rain detection feature.
-          default: ""
-          selector:
-            entity:
-              domain: switch
+              - label: "zero_turn"
+                value: "zero_turn"
+              - label: "multipoint"
+                value: "multipoint"
 
 trigger_variables:
   wildlife_safety_select_entity_trigger: !input wildlife_safety_select_entity
@@ -1171,68 +1181,68 @@ trigger_variables:
   wildlife_safety_sunrise_offset_minutes_trigger: !input wildlife_safety_sunrise_offset_minutes
 
 trigger:
-  - platform: time
-    at: !input mow_time_1
-    id: session_1
-  - platform: time
-    at: !input mow_time_2
-    id: session_2
-  - platform: time
-    at: !input mow_time_3
-    id: session_3
-  - platform: time
-    at: !input mow_time_4
-    id: session_4
-  - platform: state
-    entity_id: !input manual_start_button
-    id: manual_start
-  - platform: template
-    id: wildlife_sunset_offset
-    value_template: >
-      {% set e = wildlife_safety_select_entity_trigger | string | trim %}
-      {% set enabled = wildlife_safety_sun_schedule_enabled_trigger | bool %}
-      {% set offset = wildlife_safety_sunset_offset_minutes_trigger | int(0) %}
-      {% set next_setting = as_timestamp(state_attr('sun.sun', 'next_setting'), none) %}
-      {% set now_ts = as_timestamp(now()) %}
-      {% if next_setting is none %}
-        false
-      {% else %}
-        {% set target_ts = next_setting + (offset * 60) %}
-        {% set previous_target_ts = (next_setting - 86400) + (offset * 60) %}
-        {{
-          enabled
-          and e | length > 0
-          and states(e) != 'low_speed_mowing'
-          and (
-            (now_ts >= target_ts and now_ts < target_ts + 300)
-            or (now_ts >= previous_target_ts and now_ts < previous_target_ts + 300)
-          )
-        }}
-      {% endif %}
+- platform: time
+  at: !input mow_time_1
+  id: session_1
+- platform: time
+  at: !input mow_time_2
+  id: session_2
+- platform: time
+  at: !input mow_time_3
+  id: session_3
+- platform: time
+  at: !input mow_time_4
+  id: session_4
+- platform: state
+  entity_id: !input manual_start_button
+  id: manual_start
+- platform: template
+  id: wildlife_sunset_offset
+  value_template: >
+    {% set e = wildlife_safety_select_entity_trigger | string | trim %}
+    {% set enabled = wildlife_safety_sun_schedule_enabled_trigger | bool %}
+    {% set offset = wildlife_safety_sunset_offset_minutes_trigger | int(0) %}
+    {% set next_setting = as_timestamp(state_attr('sun.sun', 'next_setting'), none) %}
+    {% set now_ts = as_timestamp(now()) %}
+    {% if next_setting is none %}
+      false
+    {% else %}
+      {% set target_ts = next_setting + (offset * 60) %}
+      {% set previous_target_ts = (next_setting - 86400) + (offset * 60) %}
+      {{
+        enabled
+        and e | length > 0
+        and states(e) != 'low_speed_mowing'
+        and (
+          (now_ts >= target_ts and now_ts < target_ts + 300)
+          or (now_ts >= previous_target_ts and now_ts < previous_target_ts + 300)
+        )
+      }}
+    {% endif %}
 
-  - platform: template
-    id: wildlife_sunrise_offset
-    value_template: >
-      {% set e = wildlife_safety_select_entity_trigger | string | trim %}
-      {% set enabled = wildlife_safety_sun_schedule_enabled_trigger | bool %}
-      {% set offset = wildlife_safety_sunrise_offset_minutes_trigger | int(0) %}
-      {% set next_rising = as_timestamp(state_attr('sun.sun', 'next_rising'), none) %}
-      {% set now_ts = as_timestamp(now()) %}
-      {% if next_rising is none %}
-        false
-      {% else %}
-        {% set target_ts = next_rising + (offset * 60) %}
-        {% set previous_target_ts = (next_rising - 86400) + (offset * 60) %}
-        {{
-          enabled
-          and e | length > 0
-          and states(e) != 'off'
-          and (
-            (now_ts >= target_ts and now_ts < target_ts + 300)
-            or (now_ts >= previous_target_ts and now_ts < previous_target_ts + 300)
-          )
-        }}
-      {% endif %}
+- platform: template
+  id: wildlife_sunrise_offset
+  value_template: >
+    {% set e = wildlife_safety_select_entity_trigger | string | trim %}
+    {% set enabled = wildlife_safety_sun_schedule_enabled_trigger | bool %}
+    {% set offset = wildlife_safety_sunrise_offset_minutes_trigger | int(0) %}
+    {% set next_rising = as_timestamp(state_attr('sun.sun', 'next_rising'), none) %}
+    {% set now_ts = as_timestamp(now()) %}
+    {% if next_rising is none %}
+      false
+    {% else %}
+      {% set target_ts = next_rising + (offset * 60) %}
+      {% set previous_target_ts = (next_rising - 86400) + (offset * 60) %}
+      {{
+        enabled
+        and e | length > 0
+        and states(e) != 'off'
+        and (
+          (now_ts >= target_ts and now_ts < target_ts + 300)
+          or (now_ts >= previous_target_ts and now_ts < previous_target_ts + 300)
+        )
+      }}
+    {% endif %}
 
 mode: single
 max_exceeded: silent
@@ -1329,681 +1339,1284 @@ variables:
   rain_detection_mower_switch_entity: !input rain_detection_mower_switch_entity
 
 condition:
-  - alias: "Skip mowing sessions if manual skip toggle is on; allow wildlife sun schedule triggers"
-    condition: template
-    value_template: >
-      {{ trigger.id in ['wildlife_sunset_offset', 'wildlife_sunrise_offset'] or not is_state(skip_toggle, 'on') }}
+- alias: "Skip mowing sessions if manual skip toggle is on; allow wildlife sun schedule triggers"
+  condition: template
+  value_template: >
+    {{ trigger.id in ['wildlife_sunset_offset', 'wildlife_sunrise_offset'] or not is_state(skip_toggle, 'on') }}
 
 action:
-  - choose:
-      - conditions:
-          - condition: template
-            alias: "Set Wildlife Safety to low_speed_mowing based on sunset offset"
-            value_template: "{{ trigger.id == 'wildlife_sunset_offset' }}"
-        sequence:
-          - service: select.select_option
-            target:
-              entity_id: "{{ wildlife_safety_select_entity }}"
-            data:
-              option: "low_speed_mowing"
-            continue_on_error: true
-          - service: notify.persistent_notification
-            data:
-              title: "🦔 {{ mower_display_name }} Wildtierschutz aktiviert"
-              message: >
-                Der Sonnenuntergang-Zeitpunkt wurde erreicht. Wildlife Safety wurde auf
-                low_speed_mowing gesetzt.
+- choose:
+  - conditions:
+    - condition: template
+      alias: "Set Wildlife Safety to low_speed_mowing based on sunset offset"
+      value_template: "{{ trigger.id == 'wildlife_sunset_offset' }}"
+    sequence:
+    - service: select.select_option
+      target:
+        entity_id: "{{ wildlife_safety_select_entity }}"
+      data:
+        option: "low_speed_mowing"
+      continue_on_error: true
+    - service: notify.persistent_notification
+      data:
+        title: "🦔 {{ mower_display_name }} Wildtierschutz aktiviert"
+        message: >
+          Der Sonnenuntergang-Zeitpunkt wurde erreicht. Wildlife Safety wurde auf
+          low_speed_mowing gesetzt.
 
-                Offset: {{ wildlife_safety_sunset_offset_minutes }} Minuten.
-          - stop: "Wildtierschutz bei Sonnenuntergang aktiviert"
+          Offset: {{ wildlife_safety_sunset_offset_minutes }} Minuten.
+    - stop: "Wildtierschutz bei Sonnenuntergang aktiviert"
 
-      - conditions:
-          - condition: template
-            alias: "Set Wildlife Safety to off based on sunrise offset"
-            value_template: "{{ trigger.id == 'wildlife_sunrise_offset' }}"
-        sequence:
-          - service: select.select_option
-            target:
-              entity_id: "{{ wildlife_safety_select_entity }}"
-            data:
-              option: "off"
-            continue_on_error: true
-          - service: notify.persistent_notification
-            data:
-              title: "☀️ {{ mower_display_name }} Wildtierschutz deaktiviert"
-              message: >
-                Der Sonnenaufgang-Zeitpunkt wurde erreicht. Wildlife Safety wurde auf off gesetzt.
+  - conditions:
+    - condition: template
+      alias: "Set Wildlife Safety to off based on sunrise offset"
+      value_template: "{{ trigger.id == 'wildlife_sunrise_offset' }}"
+    sequence:
+    - service: select.select_option
+      target:
+        entity_id: "{{ wildlife_safety_select_entity }}"
+      data:
+        option: "off"
+      continue_on_error: true
+    - service: notify.persistent_notification
+      data:
+        title: "☀️ {{ mower_display_name }} Wildtierschutz deaktiviert"
+        message: >
+          Der Sonnenaufgang-Zeitpunkt wurde erreicht. Wildlife Safety wurde auf off gesetzt.
 
-                Offset: {{ wildlife_safety_sunrise_offset_minutes }} Minuten.
-          - stop: "Wildtierschutz bei Sonnenaufgang deaktiviert"
+          Offset: {{ wildlife_safety_sunrise_offset_minutes }} Minuten.
+    - stop: "Wildtierschutz bei Sonnenaufgang deaktiviert"
 
-  - variables:
-      zone_mod: "{{ active_zone_count | int(6) }}"
-      current_zone: "{{ states(zone_tracker) | int(0) }}"
-      zone_a: "{{ ((states(zone_tracker) | int(0)) % (active_zone_count | int(6))) + 1 }}"
-      zone_b: "{{ ((((states(zone_tracker) | int(0)) % (active_zone_count | int(6))) + 1) % (active_zone_count | int(6))) + 1 }}"
-      effective_zones_per_session: "{{ 1 if (active_zone_count | int(6)) <= 1 else (zones_per_session | int(1)) }}"
-      zone_a_switch: >
-        {% set s = {1: sw1, 2: sw2, 3: sw3, 4: sw4, 5: sw5, 6: sw6} %}
-        {{ s[zone_a | int] }}
-      zone_b_switch: >
-        {% set s = {1: sw1, 2: sw2, 3: sw3, 4: sw4, 5: sw5, 6: sw6} %}
-        {{ s[zone_b | int] }}
-      zone_a_name: >
-        {% set n = {1: z1, 2: z2, 3: z3, 4: z4, 5: z5, 6: z6} %}
-        {{ n[zone_a | int] }}
-      zone_b_name: >
-        {% set n = {1: z1, 2: z2, 3: z3, 4: z4, 5: z5, 6: z6} %}
-        {{ n[zone_b | int] }}
-      allowed_days: >
-        {% if trigger.id == 'session_1' %}{{ days_session_1 }}
-        {% elif trigger.id == 'session_2' %}{{ days_session_2 }}
-        {% elif trigger.id == 'session_3' %}{{ days_session_3 }}
-        {% elif trigger.id == 'session_4' %}{{ days_session_4 }}
-        {% else %}['mon','tue','wed','thu','fri','sat','sun']{% endif %}
-      today_dow: "{{ now().strftime('%a').lower() }}"
-      secs_since_rain: >
-        {% set r = states(rain_last_seen) %}
-        {% if r not in ['unknown', 'unavailable', 'none', ''] %}
-          {{ (as_timestamp(now()) - as_timestamp(r)) | int }}
+- variables:
+    zone_mod: "{{ active_zone_count | int(6) }}"
+    current_zone: "{{ states(zone_tracker) | int(0) }}"
+    zone_a: "{{ ((states(zone_tracker) | int(0)) % (active_zone_count | int(6))) + 1 }}"
+    zone_b: "{{ ((((states(zone_tracker) | int(0)) % (active_zone_count | int(6))) + 1) % (active_zone_count | int(6))) + 1 }}"
+    effective_zones_per_session: "{{ 1 if (active_zone_count | int(6)) <= 1 else (zones_per_session | int(1)) }}"
+    zone_a_switch: >
+      {% set s = {1: sw1, 2: sw2, 3: sw3, 4: sw4, 5: sw5, 6: sw6} %}
+      {{ s[zone_a | int] }}
+    zone_b_switch: >
+      {% set s = {1: sw1, 2: sw2, 3: sw3, 4: sw4, 5: sw5, 6: sw6} %}
+      {{ s[zone_b | int] }}
+    zone_a_name: >
+      {% set n = {1: z1, 2: z2, 3: z3, 4: z4, 5: z5, 6: z6} %}
+      {{ n[zone_a | int] }}
+    zone_b_name: >
+      {% set n = {1: z1, 2: z2, 3: z3, 4: z4, 5: z5, 6: z6} %}
+      {{ n[zone_b | int] }}
+    allowed_days: >
+      {% if trigger.id == 'session_1' %}{{ days_session_1 }}
+      {% elif trigger.id == 'session_2' %}{{ days_session_2 }}
+      {% elif trigger.id == 'session_3' %}{{ days_session_3 }}
+      {% elif trigger.id == 'session_4' %}{{ days_session_4 }}
+      {% else %}['mon','tue','wed','thu','fri','sat','sun']{% endif %}
+    today_dow: "{{ now().strftime('%a').lower() }}"
+    secs_since_rain: >
+      {% set r = states(rain_last_seen) %}
+      {% if r not in ['unknown', 'unavailable', 'none', ''] %}
+        {{ (as_timestamp(now()) - as_timestamp(r)) | int }}
+      {% else %}
+        86400
+      {% endif %}
+    wet_lawn_dry_out_seconds: "{{ wet_lawn_dry_out_delay_hours | int(6) * 3600 }}"
+    secs_since_last_run: >
+      {% set lr = states(last_run_tracker) %}
+      {% set lr_ts = as_timestamp(lr, none) %}
+      {% if lr_ts is none %}
+        999999999
+      {% else %}
+        {{ (as_timestamp(now()) - lr_ts) | int }}
+      {% endif %}
+
+- condition: template
+  alias: "Skip scheduled session if today is not active; manual starts bypass only this day gate"
+  value_template: "{{ trigger.id == 'manual_start' or today_dow in allowed_days }}"
+
+- choose:
+  - conditions:
+    - condition: template
+      alias: "Skip if garden is currently in use"
+      value_template: >
+        {% set e = garden_in_use_toggle | string | trim %}
+        {{ e | length > 0 and is_state(e, 'on') }}
+    sequence:
+    - service: notify.persistent_notification
+      data:
+        title: "🏡 {{ mower_display_name }} Mähvorgang übersprungen — Garten wird genutzt"
+        message: >
+          {{ trigger.id }} wurde übersprungen, weil der Sperrschalter
+          "Garten wird genutzt" aktiv ist.
+
+          Es wurden keine Zonenschalter geändert, keine Mäher-Einstellungen gesetzt
+          und der Mäher wurde nicht gestartet.
+    - stop: "Garten wird genutzt — Mähvorgang übersprungen"
+
+- choose:
+  - conditions:
+    - condition: template
+      alias: "Skip if minimum time between mowing runs is still active"
+      value_template: >
+        {% set min_hours = minimum_time_between_mows | int(0) %}
+        {{ min_hours > 0 and (secs_since_last_run | int) < (min_hours * 3600) }}
+    sequence:
+    - service: notify.persistent_notification
+      data:
+        title: "⏱️ {{ mower_display_name }} Mähvorgang übersprungen — Mindestabstand"
+        message: >
+          {{ trigger.id }} wurde übersprungen, weil der konfigurierte Mindestabstand
+          zwischen zwei erfolgreichen Mähvorgängen noch nicht erreicht ist.
+
+          Letzter erfolgreicher Mähvorgang: {{ states(last_run_tracker) }}.
+          Mindestabstand: {{ minimum_time_between_mows }} Stunden.
+          Verbleibende Wartezeit: {{ (((minimum_time_between_mows | int(0) * 3600) - (secs_since_last_run | int)) / 60) | round(0, 'ceil') | int }} Minuten.
+    - stop: "Mindestabstand zwischen Mähvorgängen noch aktiv"
+
+- choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {{ states(weather_entity) in ['rainy', 'pouring', 'lightning-rainy', 'hail', 'snowy-rainy', 'exceptional'] }}
+    sequence:
+    - service: input_datetime.set_datetime
+      target:
+        entity_id: !input rain_last_seen
+      data:
+        datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+    - service: notify.persistent_notification
+      data:
+        title: "🌧️ {{ mower_display_name }} Sitzung übersprungen — Regen"
+        message: >
+          {{ trigger.id }} übersprungen: Die Wettervorhersage meldet {{ states(weather_entity) }}.
+          {% if wet_lawn_dry_out_delay_hours | int(6) > 0 %}
+          Nach dem Ende des Regens gilt eine Trocknungszeit von {{ wet_lawn_dry_out_delay_hours }} Stunden.
+          {% else %}
+          Es ist keine zusätzliche Trocknungszeit nach Regen konfiguriert.
+          {% endif %}
+    - stop: "Aktuell Regen — Sitzung übersprungen"
+
+- choose:
+  - conditions:
+    - condition: template
+      value_template: "{{ wet_lawn_dry_out_seconds | int > 0 and secs_since_rain | int < wet_lawn_dry_out_seconds | int }}"
+    sequence:
+    - service: notify.persistent_notification
+      data:
+        title: "💧 {{ mower_display_name }} Sitzung übersprungen — Trocknungszeit aktiv"
+        message: >
+          {{ trigger.id }} übersprungen: Der Rasen befindet sich noch in der konfigurierten Trocknungszeit.
+          Konfigurierte Trocknungszeit: {{ wet_lawn_dry_out_delay_hours }} Stunden.
+          Regen wurde zuletzt vor {{ (secs_since_rain | int / 3600) | round(1) }} Stunden erkannt.
+          Es verbleiben {{ (((wet_lawn_dry_out_seconds | int) - (secs_since_rain | int)) / 60) | round(0, 'ceil') | int }} Minuten, bevor wieder gemäht werden darf.
+    - stop: "Trocknungszeit aktiv — Sitzung übersprungen"
+
+- choose:
+  - conditions:
+    - condition: template
+      alias: "Skip if current temperature is too high at session start"
+      value_template: >
+        {% set temp_entity = temperature_sensor | string | trim %}
+        {% if temp_entity | length == 0 %}
+          false
         {% else %}
-          86400
+          {% set temp = states(temp_entity) | float(none) %}
+          {{ temp is none or temp >= (max_start_temperature | float) }}
         {% endif %}
-      wet_lawn_dry_out_seconds: "{{ wet_lawn_dry_out_delay_hours | int(6) * 3600 }}"
-      secs_since_last_run: >
-        {% set lr = states(last_run_tracker) %}
-        {% set lr_ts = as_timestamp(lr, none) %}
-        {% if lr_ts is none %}
-          999999999
+    sequence:
+    - service: notify.persistent_notification
+      data:
+        title: "🌡️ {{ mower_display_name }} Sitzung übersprungen — Temperatur"
+        message: >
+          {{ trigger.id }} übersprungen: Die aktuelle Temperatur beträgt
+          {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
+          Der Mähvorgang startet nur unterhalb von {{ max_start_temperature }} °C.
+    - stop: "Temperatur zu hoch oder nicht verfügbar — Sitzung übersprungen"
+
+- choose:
+  - conditions:
+    - condition: template
+      alias: "Skip if battery level is too low at session start"
+      value_template: >
+        {% set battery_entity = mower_battery_level_sensor | string | trim %}
+        {% if battery_entity | length == 0 %}
+          false
         {% else %}
-          {{ (as_timestamp(now()) - lr_ts) | int }}
+          {% set battery = states(battery_entity) | float(none) %}
+          {{ battery is none or battery < (minimum_battery_before_start | float) }}
         {% endif %}
+    sequence:
+    - service: notify.persistent_notification
+      data:
+        title: "🔋 {{ mower_display_name }} Sitzung übersprungen — Akkustand"
+        message: >
+          {{ trigger.id }} wurde übersprungen: Der aktuelle Akkustand beträgt
+          {{ states(mower_battery_level_sensor) if mower_battery_level_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} %.
+          Erforderlich sind mindestens {{ minimum_battery_before_start }} %.
 
-  - condition: template
-    alias: "Skip scheduled session if today is not active; manual starts bypass only this day gate"
-    value_template: "{{ trigger.id == 'manual_start' or today_dow in allowed_days }}"
+          Es wurden keine Zonenschalter geändert und der Mäher wurde nicht gestartet.
+    - stop: "Akkustand zu niedrig oder nicht verfügbar — Sitzung übersprungen"
 
-  - choose:
-      - conditions:
-          - condition: template
-            alias: "Skip if garden is currently in use"
-            value_template: >
-              {% set e = garden_in_use_toggle | string | trim %}
-              {{ e | length > 0 and is_state(e, 'on') }}
-        sequence:
-          - service: notify.persistent_notification
-            data:
-              title: "🏡 {{ mower_display_name }} Mähvorgang übersprungen — Garten wird genutzt"
-              message: >
-                {{ trigger.id }} wurde übersprungen, weil der Sperrschalter
-                "Garten wird genutzt" aktiv ist.
+- choose:
+  - conditions:
+    - condition: template
+      alias: "Skip if mower state is not allowed before session start"
+      value_template: >
+        {% set allowed = allowed_mower_states_before_start if allowed_mower_states_before_start is iterable and allowed_mower_states_before_start is not string else [] %}
+        {% set mower_state = states(mower_entity) | lower %}
+        {{
+          mower_start_state_check_enabled | bool
+          and (allowed | list | count > 0)
+          and mower_state not in allowed
+        }}
+    sequence:
+    - service: notify.persistent_notification
+      data:
+        title: "🤖 {{ mower_display_name }} Sitzung übersprungen — Mäherstatus"
+        message: >
+          {{ trigger.id }} wurde übersprungen: Der aktuelle Mäherstatus ist
+          {{ states(mower_entity) }}.
 
-                Es wurden keine Zonenschalter geändert, keine Mäher-Einstellungen gesetzt
-                und der Mäher wurde nicht gestartet.
-          - stop: "Garten wird genutzt — Mähvorgang übersprungen"
+          Erlaubte Statuswerte vor dem Start:
+          {{ allowed_mower_states_before_start | join(', ') }}.
 
-  - choose:
-      - conditions:
-          - condition: template
-            alias: "Skip if minimum time between mowing runs is still active"
-            value_template: >
-              {% set min_hours = minimum_time_between_mows | int(0) %}
-              {{ min_hours > 0 and (secs_since_last_run | int) < (min_hours * 3600) }}
-        sequence:
-          - service: notify.persistent_notification
-            data:
-              title: "⏱️ {{ mower_display_name }} Mähvorgang übersprungen — Mindestabstand"
-              message: >
-                {{ trigger.id }} wurde übersprungen, weil der konfigurierte Mindestabstand
-                zwischen zwei erfolgreichen Mähvorgängen noch nicht erreicht ist.
+          Es wurden keine Zonenschalter geändert und der Mäher wurde nicht gestartet.
+    - stop: "Mäherstatus vor Sitzungsstart nicht erlaubt — Sitzung übersprungen"
 
-                Letzter erfolgreicher Mähvorgang: {{ states(last_run_tracker) }}.
-                Mindestabstand: {{ minimum_time_between_mows }} Stunden.
-                Verbleibende Wartezeit: {{ (((minimum_time_between_mows | int(0) * 3600) - (secs_since_last_run | int)) / 60) | round(0, 'ceil') | int }} Minuten.
-          - stop: "Mindestabstand zwischen Mähvorgängen noch aktiv"
+- choose:
+  - conditions:
+    - condition: template
+      alias: "Skip if recent low-battery resume condition indicates unfinished task"
+      value_template: >
+        {% set err_entity = mower_last_error_sensor | string | trim %}
+        {% set time_entity = mower_last_error_time_sensor | string | trim %}
+        {% set code_entity = mower_last_error_code_sensor | string | trim %}
+        {% set charging_entity = mower_charging_binary_sensor | string | trim %}
+        {% set activity_entity = mower_activity_mode_sensor | string | trim %}
+        {% set err = states(err_entity) | lower if err_entity | length > 0 else '' %}
+        {% set code = states(code_entity) | string | trim if code_entity | length > 0 else '' %}
+        {% set configured_codes = (low_battery_resume_error_codes | string | replace(' ', '')).split(',') %}
+        {% set code_matches = code | length > 0 and code in configured_codes %}
+        {% set text_matches = 'battery is too low' in err and 'resume unfinished' in err %}
+        {% set raw_time = states(time_entity) if time_entity | length > 0 else '' %}
+        {% set err_ts = as_timestamp(raw_time, none) %}
+        {% if err_ts is none and err_entity | length > 0 and err_entity in states %}
+          {% set err_ts = as_timestamp(states[err_entity].last_changed, none) %}
+        {% endif %}
+        {% set age = 999999 if err_ts is none else (as_timestamp(now()) - err_ts) | int %}
+        {% set mower = states(mower_entity) | lower %}
+        {% set charging = charging_entity | length > 0 and is_state(charging_entity, 'on') %}
+        {% set activity = states(activity_entity) | upper if activity_entity | length > 0 else '' %}
+        {% set waiting_state = mower in ['charging', 'paused', 'returning', 'error'] or charging or activity in ['MODE_CHARGING','MODE_PAUSED','MODE_PAUSE','MODE_RETURNING','MODE_ERROR'] %}
+        {{ (text_matches or code_matches) and waiting_state and age < (resume_error_guard_hours | int(6) * 3600) }}
+    sequence:
+    - service: notify.persistent_notification
+      data:
+        title: "🔋 {{ mower_display_name }} Sitzung übersprungen — vorherige Aufgabe könnte fortgesetzt werden"
+        message: >
+          {{ trigger.id }} wurde vor dem Umschalten der Flächenschalter übersprungen, weil eine aktuelle
+          Low-Battery-/Unfinished-Task-Resume-Bedingung erkannt wurde.
 
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {{ states(weather_entity) in ['rainy', 'pouring', 'lightning-rainy', 'hail', 'snowy-rainy', 'exceptional'] }}
-        sequence:
-          - service: input_datetime.set_datetime
-            target:
-              entity_id: !input rain_last_seen
-            data:
-              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
-          - service: notify.persistent_notification
-            data:
-              title: "🌧️ {{ mower_display_name }} Sitzung übersprungen — Regen"
-              message: >
-                {{ trigger.id }} übersprungen: Die Wettervorhersage meldet {{ states(weather_entity) }}.
-                {% if wet_lawn_dry_out_delay_hours | int(6) > 0 %}
-                Nach dem Ende des Regens gilt eine Trocknungszeit von {{ wet_lawn_dry_out_delay_hours }} Stunden.
-                {% else %}
-                Es ist keine zusätzliche Trocknungszeit nach Regen konfiguriert.
-                {% endif %}
-          - stop: "Aktuell Regen — Sitzung übersprungen"
+          Mäherstatus: {{ states(mower_entity) }}
+          Lädt: {{ states(mower_charging_binary_sensor) if mower_charging_binary_sensor | string | trim | length > 0 else 'nicht konfiguriert' }}
+          Aktivität: {{ states(mower_activity_mode_sensor) if mower_activity_mode_sensor | string | trim | length > 0 else 'nicht konfiguriert' }}
+          Letzter Fehler: {{ states(mower_last_error_sensor) if mower_last_error_sensor | string | trim | length > 0 else 'nicht konfiguriert' }}
+          Letzter Fehlercode: {{ states(mower_last_error_code_sensor) if mower_last_error_code_sensor | string | trim | length > 0 else 'nicht konfiguriert' }}
+    - stop: "Aktuelle Low-Battery-/Unfinished-Task-Bedingung erkannt"
 
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ wet_lawn_dry_out_seconds | int > 0 and secs_since_rain | int < wet_lawn_dry_out_seconds | int }}"
-        sequence:
-          - service: notify.persistent_notification
-            data:
-              title: "💧 {{ mower_display_name }} Sitzung übersprungen — Trocknungszeit aktiv"
-              message: >
-                {{ trigger.id }} übersprungen: Der Rasen befindet sich noch in der konfigurierten Trocknungszeit.
-                Konfigurierte Trocknungszeit: {{ wet_lawn_dry_out_delay_hours }} Stunden.
-                Regen wurde zuletzt vor {{ (secs_since_rain | int / 3600) | round(1) }} Stunden erkannt.
-                Es verbleiben {{ (((wet_lawn_dry_out_seconds | int) - (secs_since_rain | int)) / 60) | round(0, 'ceil') | int }} Minuten, bevor wieder gemäht werden darf.
-          - stop: "Trocknungszeit aktiv — Sitzung übersprungen"
+- choose:
+  - conditions:
+    - condition: template
+      alias: "Skip if any active zone switch is missing"
+      value_template: >
+        {% set switches = [sw1, sw2, sw3, sw4, sw5, sw6] %}
+        {% set active = switches[:zone_mod | int(6)] %}
+        {{ active | map('string') | map('trim') | select('eq', '') | list | count > 0 }}
+    sequence:
+    - service: notify.persistent_notification
+      data:
+        title: "⚠️ {{ mower_display_name }} Sitzung übersprungen — Zonenschalter fehlt"
+        message: >
+          Active Zone Count ist {{ zone_mod }}, aber mindestens ein Zonenschalter
+          innerhalb dieses aktiven Bereichs ist nicht konfiguriert.
+    - stop: "Ein oder mehrere aktive Zonenschalter fehlen"
 
-  - choose:
-      - conditions:
-          - condition: template
-            alias: "Skip if current temperature is too high at session start"
-            value_template: >
-              {% set temp_entity = temperature_sensor | string | trim %}
-              {% if temp_entity | length == 0 %}
-                false
-              {% else %}
-                {% set temp = states(temp_entity) | float(none) %}
-                {{ temp is none or temp >= (max_start_temperature | float) }}
-              {% endif %}
-        sequence:
-          - service: notify.persistent_notification
-            data:
-              title: "🌡️ {{ mower_display_name }} Sitzung übersprungen — Temperatur"
-              message: >
-                {{ trigger.id }} übersprungen: Die aktuelle Temperatur beträgt
-                {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
-                Der Mähvorgang startet nur unterhalb von {{ max_start_temperature }} °C.
-          - stop: "Temperatur zu hoch oder nicht verfügbar — Sitzung übersprungen"
+- choose:
+  - conditions:
+    - condition: template
+      alias: "Stop before mower actions when Dry-Run/Test Mode is enabled"
+      value_template: "{{ dry_run_mode | bool }}"
+    sequence:
+    - service: notify.persistent_notification
+      data:
+        title: "🧪 {{ mower_display_name }} Dry-Run — Startbedingungen erfüllt"
+        message: >
+          Dry-Run/Testmodus ist aktiv. Der Scheduler hätte jetzt einen Mähvorgang gestartet,
+          führt aber keine Änderungen aus.
 
-  - choose:
-      - conditions:
-          - condition: template
-            alias: "Skip if battery level is too low at session start"
-            value_template: >
-              {% set battery_entity = mower_battery_level_sensor | string | trim %}
-              {% if battery_entity | length == 0 %}
-                false
-              {% else %}
-                {% set battery = states(battery_entity) | float(none) %}
-                {{ battery is none or battery < (minimum_battery_before_start | float) }}
-              {% endif %}
-        sequence:
-          - service: notify.persistent_notification
-            data:
-              title: "🔋 {{ mower_display_name }} Sitzung übersprungen — Akkustand"
-              message: >
-                {{ trigger.id }} wurde übersprungen: Der aktuelle Akkustand beträgt
-                {{ states(mower_battery_level_sensor) if mower_battery_level_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} %.
-                Erforderlich sind mindestens {{ minimum_battery_before_start }} %.
+          Auslöser: {{ trigger.id }}.
+          Mäherstatus: {{ states(mower_entity) }}.
+          Erlaubte Startstatuswerte: {{ allowed_mower_states_before_start | join(', ') if mower_start_state_check_enabled | bool else 'Prüfung deaktiviert' }}.
+          Zonenzähler steht auf {{ current_zone }}.
+          Geplante Zone A: {{ zone_a_name }} (Zone {{ zone_a }}).
+          {% if effective_zones_per_session | int >= 2 %}Geplante Zone B: {{ zone_b_name }} (Zone {{ zone_b }}).{% else %}Zone B ist für diese Sitzung nicht geplant.{% endif %}
 
-                Es wurden keine Zonenschalter geändert und der Mäher wurde nicht gestartet.
-          - stop: "Akkustand zu niedrig oder nicht verfügbar — Sitzung übersprungen"
+          Wettervorhersage: {{ states(weather_entity) }}.
+          Temperatur: {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
+          Maximale Starttemperatur: {{ max_start_temperature }} °C.
+          Schnitthöhe: {% set temp_entity = temperature_sensor | string | trim %}{% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}{% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}{{ mammotion_hot_weather_blade_height }} mm (Hitze-Schnitthöhe aktiv ab {{ hot_weather_blade_height_temperature }} °C){% else %}{{ mammotion_blade_height }} mm{% endif %}.
+          Akkustand: {{ states(mower_battery_level_sensor) if mower_battery_level_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} %.
+          Mindest-Akkustand vor Start: {{ minimum_battery_before_start }} %.
+          Mindestabstand zwischen Mähvorgängen: {{ minimum_time_between_mows }} Stunden.
 
-  - choose:
-      - conditions:
-          - condition: template
-            alias: "Skip if mower state is not allowed before session start"
-            value_template: >
-              {% set allowed = allowed_mower_states_before_start if allowed_mower_states_before_start is iterable and allowed_mower_states_before_start is not string else [] %}
-              {% set mower_state = states(mower_entity) | lower %}
-              {{
-                mower_start_state_check_enabled | bool
-                and (allowed | list | count > 0)
-                and mower_state not in allowed
-              }}
-        sequence:
-          - service: notify.persistent_notification
-            data:
-              title: "🤖 {{ mower_display_name }} Sitzung übersprungen — Mäherstatus"
-              message: >
-                {{ trigger.id }} wurde übersprungen: Der aktuelle Mäherstatus ist
-                {{ states(mower_entity) }}.
+          Es wurden keine Zonenschalter geändert, keine Mäher-Einstellungen gesetzt,
+          kein Mähvorgang gestartet und der Last-Run-Helper wurde nicht aktualisiert.
+    - stop: "Dry-Run/Testmodus aktiv — keine Mäheraktionen ausgeführt"
 
-                Erlaubte Statuswerte vor dem Start:
-                {{ allowed_mower_states_before_start | join(', ') }}.
+- service: notify.persistent_notification
+  data:
+    title: "🌿 {{ mower_display_name }} startet — {{ trigger.id }}"
+    message: >
+      Zonenzähler steht auf {{ current_zone }}, gemäht wird {{ zone_a_name }} (Zone {{ zone_a }})
+      {% if effective_zones_per_session | int >= 2 %}, danach {{ zone_b_name }} (Zone {{ zone_b }}){% endif %}.
+      Wettervorhersage: {{ states(weather_entity) }}.
+      Temperatur: {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
+      Maximale Starttemperatur: {{ max_start_temperature }} °C.
+      Schnitthöhe: {% set temp_entity = temperature_sensor | string | trim %}{% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}{% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}{{ mammotion_hot_weather_blade_height }} mm (Hitze-Schnitthöhe aktiv ab {{ hot_weather_blade_height_temperature }} °C){% else %}{{ mammotion_blade_height }} mm{% endif %}.
+      Akkustand: {{ states(mower_battery_level_sensor) if mower_battery_level_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} %.
+      Mindest-Akkustand vor Start: {{ minimum_battery_before_start }} %.
 
-                Es wurden keine Zonenschalter geändert und der Mäher wurde nicht gestartet.
-          - stop: "Mäherstatus vor Sitzungsstart nicht erlaubt — Sitzung übersprungen"
+- alias: "Turn off all active area switches before Zone A"
+  service: switch.turn_off
+  target:
+    entity_id: >
+      {{ [sw1, sw2, sw3, sw4, sw5, sw6][:zone_mod | int(6)] | reject('eq', '') | list }}
 
-  - choose:
-      - conditions:
-          - condition: template
-            alias: "Skip if recent low-battery resume condition indicates unfinished task"
-            value_template: >
-              {% set err_entity = mower_last_error_sensor | string | trim %}
-              {% set time_entity = mower_last_error_time_sensor | string | trim %}
-              {% set code_entity = mower_last_error_code_sensor | string | trim %}
-              {% set charging_entity = mower_charging_binary_sensor | string | trim %}
-              {% set activity_entity = mower_activity_mode_sensor | string | trim %}
-              {% set err = states(err_entity) | lower if err_entity | length > 0 else '' %}
-              {% set code = states(code_entity) | string | trim if code_entity | length > 0 else '' %}
-              {% set configured_codes = (low_battery_resume_error_codes | string | replace(' ', '')).split(',') %}
-              {% set code_matches = code | length > 0 and code in configured_codes %}
-              {% set text_matches = 'battery is too low' in err and 'resume unfinished' in err %}
-              {% set raw_time = states(time_entity) if time_entity | length > 0 else '' %}
-              {% set err_ts = as_timestamp(raw_time, none) %}
-              {% if err_ts is none and err_entity | length > 0 and err_entity in states %}
-                {% set err_ts = as_timestamp(states[err_entity].last_changed, none) %}
-              {% endif %}
-              {% set age = 999999 if err_ts is none else (as_timestamp(now()) - err_ts) | int %}
-              {% set mower = states(mower_entity) | lower %}
-              {% set charging = charging_entity | length > 0 and is_state(charging_entity, 'on') %}
-              {% set activity = states(activity_entity) | upper if activity_entity | length > 0 else '' %}
-              {% set waiting_state = mower in ['charging', 'paused', 'returning', 'error'] or charging or activity in ['MODE_CHARGING','MODE_PAUSED','MODE_PAUSE','MODE_RETURNING','MODE_ERROR'] %}
-              {{ (text_matches or code_matches) and waiting_state and age < (resume_error_guard_hours | int(6) * 3600) }}
-        sequence:
-          - service: notify.persistent_notification
-            data:
-              title: "🔋 {{ mower_display_name }} Sitzung übersprungen — vorherige Aufgabe könnte fortgesetzt werden"
-              message: >
-                {{ trigger.id }} wurde vor dem Umschalten der Flächenschalter übersprungen, weil eine aktuelle
-                Low-Battery-/Unfinished-Task-Resume-Bedingung erkannt wurde.
+- delay:
+    seconds: 6
 
-                Mäherstatus: {{ states(mower_entity) }}
-                Lädt: {{ states(mower_charging_binary_sensor) if mower_charging_binary_sensor | string | trim | length > 0 else 'nicht konfiguriert' }}
-                Aktivität: {{ states(mower_activity_mode_sensor) if mower_activity_mode_sensor | string | trim | length > 0 else 'nicht konfiguriert' }}
-                Letzter Fehler: {{ states(mower_last_error_sensor) if mower_last_error_sensor | string | trim | length > 0 else 'nicht konfiguriert' }}
-                Letzter Fehlercode: {{ states(mower_last_error_code_sensor) if mower_last_error_code_sensor | string | trim | length > 0 else 'nicht konfiguriert' }}
-          - stop: "Aktuelle Low-Battery-/Unfinished-Task-Bedingung erkannt"
+- alias: "Enable only Zone A switch"
+  service: switch.turn_on
+  target:
+    entity_id: "{{ zone_a_switch }}"
 
-  - choose:
-      - conditions:
-          - condition: template
-            alias: "Skip if any active zone switch is missing"
-            value_template: >
-              {% set switches = [sw1, sw2, sw3, sw4, sw5, sw6] %}
-              {% set active = switches[:zone_mod | int(6)] %}
-              {{ active | map('string') | map('trim') | select('eq', '') | list | count > 0 }}
-        sequence:
-          - service: notify.persistent_notification
-            data:
-              title: "⚠️ {{ mower_display_name }} Sitzung übersprungen — Zonenschalter fehlt"
-              message: >
-                Active Zone Count ist {{ zone_mod }}, aber mindestens ein Zonenschalter
-                innerhalb dieses aktiven Bereichs ist nicht konfiguriert.
-          - stop: "Ein oder mehrere aktive Zonenschalter fehlen"
-
-  - choose:
-      - conditions:
-          - condition: template
-            alias: "Stop before mower actions when Dry-Run/Test Mode is enabled"
-            value_template: "{{ dry_run_mode | bool }}"
-        sequence:
-          - service: notify.persistent_notification
-            data:
-              title: "🧪 {{ mower_display_name }} Dry-Run — Startbedingungen erfüllt"
-              message: >
-                Dry-Run/Testmodus ist aktiv. Der Scheduler hätte jetzt einen Mähvorgang gestartet,
-                führt aber keine Änderungen aus.
-
-                Auslöser: {{ trigger.id }}.
-                Mäherstatus: {{ states(mower_entity) }}.
-                Erlaubte Startstatuswerte: {{ allowed_mower_states_before_start | join(', ') if mower_start_state_check_enabled | bool else 'Prüfung deaktiviert' }}.
-                Zonenzähler steht auf {{ current_zone }}.
-                Geplante Zone A: {{ zone_a_name }} (Zone {{ zone_a }}).
-                {% if effective_zones_per_session | int >= 2 %}Geplante Zone B: {{ zone_b_name }} (Zone {{ zone_b }}).{% else %}Zone B ist für diese Sitzung nicht geplant.{% endif %}
-
-                Wettervorhersage: {{ states(weather_entity) }}.
-                Temperatur: {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
-                Maximale Starttemperatur: {{ max_start_temperature }} °C.
-                Schnitthöhe: {% set temp_entity = temperature_sensor | string | trim %}{% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}{% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}{{ mammotion_hot_weather_blade_height }} mm (Hitze-Schnitthöhe aktiv ab {{ hot_weather_blade_height_temperature }} °C){% else %}{{ mammotion_blade_height }} mm{% endif %}.
-                Akkustand: {{ states(mower_battery_level_sensor) if mower_battery_level_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} %.
-                Mindest-Akkustand vor Start: {{ minimum_battery_before_start }} %.
-                Mindestabstand zwischen Mähvorgängen: {{ minimum_time_between_mows }} Stunden.
-
-                Es wurden keine Zonenschalter geändert, keine Mäher-Einstellungen gesetzt,
-                kein Mähvorgang gestartet und der Last-Run-Helper wurde nicht aktualisiert.
-          - stop: "Dry-Run/Testmodus aktiv — keine Mäheraktionen ausgeführt"
-
-  - service: notify.persistent_notification
-    data:
-      title: "🌿 {{ mower_display_name }} startet — {{ trigger.id }}"
-      message: >
-        Zonenzähler steht auf {{ current_zone }}, gemäht wird {{ zone_a_name }} (Zone {{ zone_a }})
-        {% if effective_zones_per_session | int >= 2 %}, danach {{ zone_b_name }} (Zone {{ zone_b }}){% endif %}.
-        Wettervorhersage: {{ states(weather_entity) }}.
-        Temperatur: {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
-        Maximale Starttemperatur: {{ max_start_temperature }} °C.
-        Schnitthöhe: {% set temp_entity = temperature_sensor | string | trim %}{% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}{% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}{{ mammotion_hot_weather_blade_height }} mm (Hitze-Schnitthöhe aktiv ab {{ hot_weather_blade_height_temperature }} °C){% else %}{{ mammotion_blade_height }} mm{% endif %}.
-        Akkustand: {{ states(mower_battery_level_sensor) if mower_battery_level_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} %.
-        Mindest-Akkustand vor Start: {{ minimum_battery_before_start }} %.
-
-  - alias: "Turn off all active area switches before Zone A"
-    service: switch.turn_off
-    target:
-      entity_id: >
-        {{ [sw1, sw2, sw3, sw4, sw5, sw6][:zone_mod | int(6)] | reject('eq', '') | list }}
-
-  - delay:
-      seconds: 6
-
-  - alias: "Enable only Zone A switch"
-    service: switch.turn_on
-    target:
-      entity_id: "{{ zone_a_switch }}"
-
-  - delay:
-      seconds: 9
+- delay:
+    seconds: 9
 
   # ── Apply Mammotion integration settings before Zone A only if needed ────────────
-  - alias: "Set blade height before Zone A"
-    choose:
+- alias: "Set blade height before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = blade_height_number_entity | string | trim %}
+        {% set current = states(e) | float(none) if e | length > 0 else none %}
+        {% set temp_entity = temperature_sensor | string | trim %}
+        {% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}
+        {% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}
+          {% set desired = mammotion_hot_weather_blade_height | float %}
+        {% else %}
+          {% set desired = mammotion_blade_height | float %}
+        {% endif %}
+        {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
+    sequence:
+    - service: number.set_value
+      target:
+        entity_id: "{{ blade_height_number_entity }}"
+      data:
+        value: >
+          {% set temp_entity = temperature_sensor | string | trim %}
+          {% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}
+          {% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}
+            {{ mammotion_hot_weather_blade_height | int }}
+          {% else %}
+            {{ mammotion_blade_height | int }}
+          {% endif %}
+      continue_on_error: true
+- alias: "Set working speed before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = working_speed_number_entity | string | trim %}
+        {% set current = states(e) | float(none) if e | length > 0 else none %}
+        {% set desired = mammotion_working_speed | float %}
+        {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
+    sequence:
+    - service: number.set_value
+      target:
+        entity_id: "{{ working_speed_number_entity }}"
+      data:
+        value: "{{ mammotion_working_speed | float }}"
+      continue_on_error: true
+- alias: "Set cutting path angle before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = cutting_path_angle_number_entity | string | trim %}
+        {% set current = states(e) | float(none) if e | length > 0 else none %}
+        {% set desired = mammotion_cutting_path_angle | float %}
+        {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
+    sequence:
+    - service: number.set_value
+      target:
+        entity_id: "{{ cutting_path_angle_number_entity }}"
+      data:
+        value: "{{ mammotion_cutting_path_angle | int }}"
+      continue_on_error: true
+- alias: "Set crossing angle before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = crossing_angle_number_entity | string | trim %}
+        {% set current = states(e) | float(none) if e | length > 0 else none %}
+        {% set desired = mammotion_crossing_angle | float %}
+        {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
+    sequence:
+    - service: number.set_value
+      target:
+        entity_id: "{{ crossing_angle_number_entity }}"
+      data:
+        value: "{{ mammotion_crossing_angle | int }}"
+      continue_on_error: true
+- alias: "Set path spacing before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = path_spacing_number_entity | string | trim %}
+        {% set current = states(e) | float(none) if e | length > 0 else none %}
+        {% set desired = mammotion_path_spacing | float %}
+        {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
+    sequence:
+    - service: number.set_value
+      target:
+        entity_id: "{{ path_spacing_number_entity }}"
+      data:
+        value: "{{ mammotion_path_spacing | int }}"
+      continue_on_error: true
+- alias: "Set start progress before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = start_progress_number_entity | string | trim %}
+        {% set current = states(e) | float(none) if e | length > 0 else none %}
+        {% set desired = mammotion_start_progress | float %}
+        {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
+    sequence:
+    - service: number.set_value
+      target:
+        entity_id: "{{ start_progress_number_entity }}"
+      data:
+        value: "{{ mammotion_start_progress | int }}"
+      continue_on_error: true
+- alias: "Set cutter speed before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = cutter_speed_select_entity | string | trim %}
+        {% set desired = cutter_speed_option | string %}
+        {{ e | length > 0 and states(e) | string != desired }}
+    sequence:
+    - service: select.select_option
+      target:
+        entity_id: "{{ cutter_speed_select_entity }}"
+      data:
+        option: "{{ cutter_speed_option }}"
+      continue_on_error: true
+- alias: "Set cutting path mode before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = cutting_path_mode_select_entity | string | trim %}
+        {% set desired = cutting_path_mode_option | string %}
+        {{ e | length > 0 and states(e) | string != desired }}
+    sequence:
+    - service: select.select_option
+      target:
+        entity_id: "{{ cutting_path_mode_select_entity }}"
+      data:
+        option: "{{ cutting_path_mode_option }}"
+      continue_on_error: true
+- alias: "Set cutting path angle mode before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = cutting_path_angle_mode_select_entity | string | trim %}
+        {% set desired = cutting_path_angle_mode_option | string %}
+        {{ e | length > 0 and states(e) | string != desired }}
+    sequence:
+    - service: select.select_option
+      target:
+        entity_id: "{{ cutting_path_angle_mode_select_entity }}"
+      data:
+        option: "{{ cutting_path_angle_mode_option }}"
+      continue_on_error: true
+- alias: "Set mow order before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = mow_order_select_entity | string | trim %}
+        {% set desired = mow_order_option | string %}
+        {{ e | length > 0 and states(e) | string != desired }}
+    sequence:
+    - service: select.select_option
+      target:
+        entity_id: "{{ mow_order_select_entity }}"
+      data:
+        option: "{{ mow_order_option }}"
+      continue_on_error: true
+- alias: "Set no-go zone laps before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = no_go_laps_select_entity | string | trim %}
+        {% set desired = no_go_laps_option | string %}
+        {{ e | length > 0 and states(e) | string != desired }}
+    sequence:
+    - service: select.select_option
+      target:
+        entity_id: "{{ no_go_laps_select_entity }}"
+      data:
+        option: "{{ no_go_laps_option }}"
+      continue_on_error: true
+- alias: "Set obstacle avoidance before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = obstacle_avoidance_select_entity | string | trim %}
+        {% set desired = obstacle_avoidance_option | string %}
+        {{ e | length > 0 and states(e) | string != desired }}
+    sequence:
+    - service: select.select_option
+      target:
+        entity_id: "{{ obstacle_avoidance_select_entity }}"
+      data:
+        option: "{{ obstacle_avoidance_option }}"
+      continue_on_error: true
+- alias: "Set perimeter laps before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = perimeter_laps_select_entity | string | trim %}
+        {% set desired = perimeter_laps_option | string %}
+        {{ e | length > 0 and states(e) | string != desired }}
+    sequence:
+    - service: select.select_option
+      target:
+        entity_id: "{{ perimeter_laps_select_entity }}"
+      data:
+        option: "{{ perimeter_laps_option }}"
+      continue_on_error: true
+- alias: "Set traversal mode before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = traversal_mode_select_entity | string | trim %}
+        {% set desired = traversal_mode_option | string %}
+        {{ e | length > 0 and states(e) | string != desired }}
+    sequence:
+    - service: select.select_option
+      target:
+        entity_id: "{{ traversal_mode_select_entity }}"
+      data:
+        option: "{{ traversal_mode_option }}"
+      continue_on_error: true
+- alias: "Set turnaround mode before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = turnaround_mode_select_entity | string | trim %}
+        {% set desired = turnaround_mode_option | string %}
+        {{ e | length > 0 and states(e) | string != desired }}
+    sequence:
+    - service: select.select_option
+      target:
+        entity_id: "{{ turnaround_mode_select_entity }}"
+      data:
+        option: "{{ turnaround_mode_option }}"
+      continue_on_error: true
+- alias: "Set wildlife safety before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = wildlife_safety_select_entity | string | trim %}
+        {% set desired = wildlife_safety_option | string %}
+        {{
+          not (wildlife_safety_sun_schedule_enabled | bool)
+          and e | length > 0
+          and states(e) | string != desired
+        }}
+    sequence:
+    - service: select.select_option
+      target:
+        entity_id: "{{ wildlife_safety_select_entity }}"
+      data:
+        option: "{{ wildlife_safety_option }}"
+      continue_on_error: true
+- alias: "Ensure auto lighting/night light is on before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = night_light_switch_entity | string | trim %}
+        {{ e | length > 0 and not is_state(e, 'on') }}
+    sequence:
+    - service: switch.turn_on
+      target:
+        entity_id: "{{ night_light_switch_entity }}"
+      continue_on_error: true
+- alias: "Ensure rain detection during mow is on before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = rain_detection_during_mow_switch_entity | string | trim %}
+        {{ e | length > 0 and not is_state(e, 'on') }}
+    sequence:
+    - service: switch.turn_on
+      target:
+        entity_id: "{{ rain_detection_during_mow_switch_entity }}"
+      continue_on_error: true
+- alias: "Ensure mower rain detection is on before Zone A"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: >
+        {% set e = rain_detection_mower_switch_entity | string | trim %}
+        {{ e | length > 0 and not is_state(e, 'on') }}
+    sequence:
+    - service: switch.turn_on
+      target:
+        entity_id: "{{ rain_detection_mower_switch_entity }}"
+      continue_on_error: true
+- alias: "Start mowing Zone A"
+  service: lawn_mower.start_mowing
+  target:
+    entity_id: !input mower_entity
+
+- alias: "One-time pause recovery after Zone A start"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: "{{ post_start_pause_resume_window | int > 0 }}"
+    sequence:
+    - wait_for_trigger:
+      - platform: state
+        entity_id: !input mower_entity
+        to: "paused"
+        id: post_start_paused
+      - platform: state
+        entity_id: !input weather_entity
+        to:
+        - "rainy"
+        - "pouring"
+        - "lightning-rainy"
+        - "hail"
+        - "snowy-rainy"
+        - "exceptional"
+        id: rain
+      timeout:
+        seconds: "{{ post_start_pause_resume_window | int }}"
+      continue_on_timeout: true
+    - choose:
       - conditions:
-          - condition: template
-            value_template: >
-              {% set e = blade_height_number_entity | string | trim %}
-              {% set current = states(e) | float(none) if e | length > 0 else none %}
-              {% set temp_entity = temperature_sensor | string | trim %}
-              {% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}
-              {% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}
-                {% set desired = mammotion_hot_weather_blade_height | float %}
-              {% else %}
-                {% set desired = mammotion_blade_height | float %}
-              {% endif %}
-              {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
+        - condition: template
+          value_template: "{{ wait.trigger is not none and wait.trigger.id == 'post_start_paused' }}"
         sequence:
-          - service: number.set_value
-            target:
-              entity_id: "{{ blade_height_number_entity }}"
-            data:
-              value: >
+        - service: lawn_mower.start_mowing
+          target:
+            entity_id: !input mower_entity
+          continue_on_error: true
+        - service: notify.persistent_notification
+          data:
+            title: "▶️ {{ mower_display_name }} fortgesetzt — Zone A"
+            message: >
+              Der Mäher hat kurz nach dem Start von {{ zone_a_name }} pausiert.
+              Ein einmaliger Fortsetzen-Befehl wurde gesendet.
+      - conditions:
+        - condition: template
+          value_template: "{{ wait.trigger is not none and wait.trigger.id == 'rain' }}"
+        sequence:
+        - service: lawn_mower.dock
+          target:
+            entity_id: !input mower_entity
+        - service: input_datetime.set_datetime
+          target:
+            entity_id: !input rain_last_seen
+          data:
+            datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+        - service: notify.persistent_notification
+          data:
+            title: "🌧️ {{ mower_display_name }} während Zone-A-Start zurückgerufen"
+            message: >
+              Während des Starts von {{ zone_a_name }} wurde Regen erkannt.
+              Der Mäher wurde zur Ladestation geschickt und der Zonenzähler wurde nicht weitergesetzt.
+        - stop: "Regen während des Start-/Wiederaufnahmefensters erkannt"
+
+- alias: "Wait for Zone A to complete, timeout, or rain to interrupt"
+  wait_for_trigger:
+  - platform: state
+    entity_id: !input weather_entity
+    to:
+    - "rainy"
+    - "pouring"
+    - "lightning-rainy"
+    - "hail"
+    - "snowy-rainy"
+    - "exceptional"
+    id: rain
+  - platform: template
+    id: complete
+    value_template: >
+      {% set progress_entity = mower_progress_sensor | string | trim %}
+      {% set time_left_entity = mower_time_left_sensor | string | trim %}
+      {% set task_entity = mower_task_status_sensor | string | trim %}
+      {% set activity_entity = mower_activity_mode_sensor | string | trim %}
+      {% set progress = states(progress_entity) | float(-1) if progress_entity | length > 0 else -1 %}
+      {% set time_left = states(time_left_entity) | float(999) if time_left_entity | length > 0 else 999 %}
+      {% set task = states(task_entity) | upper if task_entity | length > 0 else '' %}
+      {% set activity = states(activity_entity) | upper if activity_entity | length > 0 else '' %}
+      {% set mower = states(mower_entity) | lower %}
+      {{
+        task == 'COMPLETE'
+        or (
+          time_left <= 0
+          and progress >= 99
+          and activity not in ['MODE_WORKING', 'MODE_MOWING']
+        )
+        or (
+          mower in ['docked', 'idle']
+          and progress >= 99
+          and time_left <= 0
+        )
+      }}
+  timeout:
+    minutes: "{{ zone_duration | int }}"
+  continue_on_timeout: true
+
+- alias: "Three-minute grace period after Zone A completion signal"
+  choose:
+  - conditions:
+    - condition: template
+      value_template: "{{ wait.trigger is not none and wait.trigger.id == 'complete' }}"
+    sequence:
+    - delay:
+        minutes: 3
+
+- alias: "Return mower to dock after Zone A"
+  service: lawn_mower.dock
+  target:
+    entity_id: !input mower_entity
+
+- choose:
+  - conditions:
+    - condition: template
+      value_template: "{{ wait.trigger is none or wait.trigger.id == 'complete' }}"
+    sequence:
+    - service: input_number.set_value
+      target:
+        entity_id: !input zone_tracker
+      data:
+        value: "{{ zone_a | int }}"
+    - service: input_datetime.set_datetime
+      target:
+        entity_id: !input last_run_tracker
+      data:
+        datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+    - service: notify.persistent_notification
+      data:
+        title: "✅ {{ mower_display_name }} abgeschlossen — {{ zone_a_name }}"
+        message: >
+          Zone {{ zone_a }} ({{ zone_a_name }}) wurde abgeschlossen.
+          Zonenzähler wurde auf {{ zone_a }} weitergesetzt.
+  - conditions:
+    - condition: template
+      value_template: "{{ wait.trigger is not none and wait.trigger.id == 'rain' }}"
+    sequence:
+    - service: input_datetime.set_datetime
+      target:
+        entity_id: !input rain_last_seen
+      data:
+        datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+    - service: notify.persistent_notification
+      data:
+        title: "🌧️ {{ mower_display_name }} während des Mähens zurückgerufen — Zone A"
+        message: >
+          Während des Mähens von {{ zone_a_name }} wurde Regen erkannt. Der Mäher wurde zur Ladestation geschickt.
+          Zonenzähler bleibt bei {{ current_zone }}.
+          Trocknungszeit nach Regen: {{ wet_lawn_dry_out_delay_hours }} Stunden.
+
+- choose:
+  - conditions:
+    - condition: template
+      value_template: "{{ effective_zones_per_session | int >= 2 }}"
+    sequence:
+    - alias: "Rest period between Zone A and Zone B"
+      delay:
+        minutes: "{{ inter_zone_rest | int }}"
+
+    - choose:
+      - conditions:
+        - condition: template
+          alias: "Skip Zone B if garden is currently in use"
+          value_template: >
+            {% set e = garden_in_use_toggle | string | trim %}
+            {{ e | length > 0 and is_state(e, 'on') }}
+        sequence:
+        - service: notify.persistent_notification
+          data:
+            title: "🏡 {{ mower_display_name }} Zone B übersprungen — Garten wird genutzt"
+            message: >
+              Zone B wurde vor dem Start von {{ zone_b_name }} übersprungen,
+              weil der Sperrschalter "Garten wird genutzt" aktiv ist.
+
+              Der Zonenzähler bleibt bei {{ zone_a }}.
+        - stop: "Garten wird genutzt — Zone B übersprungen"
+
+    - choose:
+      - conditions:
+        - condition: template
+          alias: "Skip Zone B if rain is detected before start"
+          value_template: >
+            {{ states(weather_entity) in ['rainy', 'pouring', 'lightning-rainy', 'hail', 'snowy-rainy', 'exceptional'] }}
+        sequence:
+        - service: input_datetime.set_datetime
+          target:
+            entity_id: !input rain_last_seen
+          data:
+            datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+        - service: notify.persistent_notification
+          data:
+            title: "🌧️ {{ mower_display_name }} Zone B übersprungen — Regen"
+            message: >
+              Vor Zone B wurde Regen erkannt. {{ zone_b_name }} wird übersprungen.
+              Wettervorhersage: {{ states(weather_entity) }}.
+              Zonenzähler bleibt bei {{ zone_a }}.
+              Trocknungszeit nach Regen: {{ wet_lawn_dry_out_delay_hours }} Stunden.
+        - stop: "Regen vor Zone B erkannt"
+
+    - choose:
+      - conditions:
+        - condition: template
+          alias: "Skip Zone B if current temperature is too high before start"
+          value_template: >
+            {% set temp_entity = temperature_sensor | string | trim %}
+            {% if temp_entity | length == 0 %}
+              false
+            {% else %}
+              {% set temp = states(temp_entity) | float(none) %}
+              {{ temp is none or temp >= (max_start_temperature | float) }}
+            {% endif %}
+        sequence:
+        - service: notify.persistent_notification
+          data:
+            title: "🌡️ {{ mower_display_name }} Zone B übersprungen — Temperatur"
+            message: >
+              Zone B wurde vor dem Start von {{ zone_b_name }} übersprungen.
+
+              Aktuelle Temperatur:
+              {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
+
+              Der Mähvorgang startet nur unterhalb von {{ max_start_temperature }} °C.
+              Zonenzähler bleibt bei {{ zone_a }}.
+        - stop: "Temperatur vor Zone B zu hoch oder nicht verfügbar"
+
+    - choose:
+      - conditions:
+        - condition: template
+          alias: "Skip Zone B if battery level is too low before start"
+          value_template: >
+            {% set battery_entity = mower_battery_level_sensor | string | trim %}
+            {% if battery_entity | length == 0 %}
+              false
+            {% else %}
+              {% set battery = states(battery_entity) | float(none) %}
+              {{ battery is none or battery < (minimum_battery_before_start | float) }}
+            {% endif %}
+        sequence:
+        - service: notify.persistent_notification
+          data:
+            title: "🔋 {{ mower_display_name }} Zone B übersprungen — Akkustand"
+            message: >
+              Zone B wurde vor dem Start von {{ zone_b_name }} übersprungen.
+
+              Aktueller Akkustand:
+              {{ states(mower_battery_level_sensor) if mower_battery_level_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} %.
+
+              Erforderlich sind mindestens {{ minimum_battery_before_start }} %.
+              Zonenzähler bleibt bei {{ zone_a }}.
+        - stop: "Akkustand vor Zone B zu niedrig oder nicht verfügbar"
+
+    - choose:
+      - conditions:
+        - condition: template
+          alias: "Skip Zone B if mower state is not allowed before start"
+          value_template: >
+            {% set allowed = allowed_mower_states_before_start if allowed_mower_states_before_start is iterable and allowed_mower_states_before_start is not string else [] %}
+            {% set mower_state = states(mower_entity) | lower %}
+            {{
+              mower_start_state_check_enabled | bool
+              and (allowed | list | count > 0)
+              and mower_state not in allowed
+            }}
+        sequence:
+        - service: notify.persistent_notification
+          data:
+            title: "🤖 {{ mower_display_name }} Zone B übersprungen — Mäherstatus"
+            message: >
+              Zone B wurde vor dem Start von {{ zone_b_name }} übersprungen.
+
+              Aktueller Mäherstatus: {{ states(mower_entity) }}.
+              Erlaubte Statuswerte vor dem Start:
+              {{ allowed_mower_states_before_start | join(', ') }}.
+
+              Zonenzähler bleibt bei {{ zone_a }}.
+        - stop: "Mäherstatus vor Zone B nicht erlaubt"
+
+    - choose:
+      - conditions:
+        - condition: template
+          alias: "Still clear to mow Zone B"
+          value_template: "true"
+        sequence:
+        - alias: "Turn off all active area switches before Zone B"
+          service: switch.turn_off
+          target:
+            entity_id: >
+              {{ [sw1, sw2, sw3, sw4, sw5, sw6][:zone_mod | int(6)] | reject('eq', '') | list }}
+        - delay:
+            seconds: 6
+        - alias: "Enable only Zone B switch"
+          service: switch.turn_on
+          target:
+            entity_id: "{{ zone_b_switch }}"
+        - delay:
+            seconds: 9
+                  # ── Apply Mammotion integration settings before Zone B only if needed ────────────
+        - alias: "Set blade height before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = blade_height_number_entity | string | trim %}
+                {% set current = states(e) | float(none) if e | length > 0 else none %}
                 {% set temp_entity = temperature_sensor | string | trim %}
                 {% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}
                 {% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}
-                  {{ mammotion_hot_weather_blade_height | int }}
+                  {% set desired = mammotion_hot_weather_blade_height | float %}
                 {% else %}
-                  {{ mammotion_blade_height | int }}
+                  {% set desired = mammotion_blade_height | float %}
                 {% endif %}
-            continue_on_error: true
-  - alias: "Set working speed before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = working_speed_number_entity | string | trim %}
-              {% set current = states(e) | float(none) if e | length > 0 else none %}
-              {% set desired = mammotion_working_speed | float %}
-              {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
-        sequence:
-          - service: number.set_value
-            target:
-              entity_id: "{{ working_speed_number_entity }}"
-            data:
-              value: "{{ mammotion_working_speed | float }}"
-            continue_on_error: true
-  - alias: "Set cutting path angle before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = cutting_path_angle_number_entity | string | trim %}
-              {% set current = states(e) | float(none) if e | length > 0 else none %}
-              {% set desired = mammotion_cutting_path_angle | float %}
-              {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
-        sequence:
-          - service: number.set_value
-            target:
-              entity_id: "{{ cutting_path_angle_number_entity }}"
-            data:
-              value: "{{ mammotion_cutting_path_angle | int }}"
-            continue_on_error: true
-  - alias: "Set crossing angle before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = crossing_angle_number_entity | string | trim %}
-              {% set current = states(e) | float(none) if e | length > 0 else none %}
-              {% set desired = mammotion_crossing_angle | float %}
-              {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
-        sequence:
-          - service: number.set_value
-            target:
-              entity_id: "{{ crossing_angle_number_entity }}"
-            data:
-              value: "{{ mammotion_crossing_angle | int }}"
-            continue_on_error: true
-  - alias: "Set path spacing before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = path_spacing_number_entity | string | trim %}
-              {% set current = states(e) | float(none) if e | length > 0 else none %}
-              {% set desired = mammotion_path_spacing | float %}
-              {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
-        sequence:
-          - service: number.set_value
-            target:
-              entity_id: "{{ path_spacing_number_entity }}"
-            data:
-              value: "{{ mammotion_path_spacing | int }}"
-            continue_on_error: true
-  - alias: "Set start progress before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = start_progress_number_entity | string | trim %}
-              {% set current = states(e) | float(none) if e | length > 0 else none %}
-              {% set desired = mammotion_start_progress | float %}
-              {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
-        sequence:
-          - service: number.set_value
-            target:
-              entity_id: "{{ start_progress_number_entity }}"
-            data:
-              value: "{{ mammotion_start_progress | int }}"
-            continue_on_error: true
-  - alias: "Set cutter speed before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = cutter_speed_select_entity | string | trim %}
-              {% set desired = cutter_speed_option | string %}
-              {{ e | length > 0 and states(e) | string != desired }}
-        sequence:
-          - service: select.select_option
-            target:
-              entity_id: "{{ cutter_speed_select_entity }}"
-            data:
-              option: "{{ cutter_speed_option }}"
-            continue_on_error: true
-  - alias: "Set cutting path mode before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = cutting_path_mode_select_entity | string | trim %}
-              {% set desired = cutting_path_mode_option | string %}
-              {{ e | length > 0 and states(e) | string != desired }}
-        sequence:
-          - service: select.select_option
-            target:
-              entity_id: "{{ cutting_path_mode_select_entity }}"
-            data:
-              option: "{{ cutting_path_mode_option }}"
-            continue_on_error: true
-  - alias: "Set cutting path angle mode before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = cutting_path_angle_mode_select_entity | string | trim %}
-              {% set desired = cutting_path_angle_mode_option | string %}
-              {{ e | length > 0 and states(e) | string != desired }}
-        sequence:
-          - service: select.select_option
-            target:
-              entity_id: "{{ cutting_path_angle_mode_select_entity }}"
-            data:
-              option: "{{ cutting_path_angle_mode_option }}"
-            continue_on_error: true
-  - alias: "Set mow order before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = mow_order_select_entity | string | trim %}
-              {% set desired = mow_order_option | string %}
-              {{ e | length > 0 and states(e) | string != desired }}
-        sequence:
-          - service: select.select_option
-            target:
-              entity_id: "{{ mow_order_select_entity }}"
-            data:
-              option: "{{ mow_order_option }}"
-            continue_on_error: true
-  - alias: "Set no-go zone laps before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = no_go_laps_select_entity | string | trim %}
-              {% set desired = no_go_laps_option | string %}
-              {{ e | length > 0 and states(e) | string != desired }}
-        sequence:
-          - service: select.select_option
-            target:
-              entity_id: "{{ no_go_laps_select_entity }}"
-            data:
-              option: "{{ no_go_laps_option }}"
-            continue_on_error: true
-  - alias: "Set obstacle avoidance before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = obstacle_avoidance_select_entity | string | trim %}
-              {% set desired = obstacle_avoidance_option | string %}
-              {{ e | length > 0 and states(e) | string != desired }}
-        sequence:
-          - service: select.select_option
-            target:
-              entity_id: "{{ obstacle_avoidance_select_entity }}"
-            data:
-              option: "{{ obstacle_avoidance_option }}"
-            continue_on_error: true
-  - alias: "Set perimeter laps before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = perimeter_laps_select_entity | string | trim %}
-              {% set desired = perimeter_laps_option | string %}
-              {{ e | length > 0 and states(e) | string != desired }}
-        sequence:
-          - service: select.select_option
-            target:
-              entity_id: "{{ perimeter_laps_select_entity }}"
-            data:
-              option: "{{ perimeter_laps_option }}"
-            continue_on_error: true
-  - alias: "Set traversal mode before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = traversal_mode_select_entity | string | trim %}
-              {% set desired = traversal_mode_option | string %}
-              {{ e | length > 0 and states(e) | string != desired }}
-        sequence:
-          - service: select.select_option
-            target:
-              entity_id: "{{ traversal_mode_select_entity }}"
-            data:
-              option: "{{ traversal_mode_option }}"
-            continue_on_error: true
-  - alias: "Set turnaround mode before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = turnaround_mode_select_entity | string | trim %}
-              {% set desired = turnaround_mode_option | string %}
-              {{ e | length > 0 and states(e) | string != desired }}
-        sequence:
-          - service: select.select_option
-            target:
-              entity_id: "{{ turnaround_mode_select_entity }}"
-            data:
-              option: "{{ turnaround_mode_option }}"
-            continue_on_error: true
-  - alias: "Set wildlife safety before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = wildlife_safety_select_entity | string | trim %}
-              {% set desired = wildlife_safety_option | string %}
-              {{
-                not (wildlife_safety_sun_schedule_enabled | bool)
-                and e | length > 0
-                and states(e) | string != desired
-              }}
-        sequence:
-          - service: select.select_option
-            target:
-              entity_id: "{{ wildlife_safety_select_entity }}"
-            data:
-              option: "{{ wildlife_safety_option }}"
-            continue_on_error: true
-  - alias: "Ensure auto lighting/night light is on before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = night_light_switch_entity | string | trim %}
-              {{ e | length > 0 and not is_state(e, 'on') }}
-        sequence:
-          - service: switch.turn_on
-            target:
-              entity_id: "{{ night_light_switch_entity }}"
-            continue_on_error: true
-  - alias: "Ensure rain detection during mow is on before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = rain_detection_during_mow_switch_entity | string | trim %}
-              {{ e | length > 0 and not is_state(e, 'on') }}
-        sequence:
-          - service: switch.turn_on
-            target:
-              entity_id: "{{ rain_detection_during_mow_switch_entity }}"
-            continue_on_error: true
-  - alias: "Ensure mower rain detection is on before Zone A"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: >
-              {% set e = rain_detection_mower_switch_entity | string | trim %}
-              {{ e | length > 0 and not is_state(e, 'on') }}
-        sequence:
-          - service: switch.turn_on
-            target:
-              entity_id: "{{ rain_detection_mower_switch_entity }}"
-            continue_on_error: true
-  - alias: "Start mowing Zone A"
-    service: lawn_mower.start_mowing
-    target:
-      entity_id: !input mower_entity
+                {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
+            sequence:
+            - service: number.set_value
+              target:
+                entity_id: "{{ blade_height_number_entity }}"
+              data:
+                value: >
+                  {% set temp_entity = temperature_sensor | string | trim %}
+                  {% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}
+                  {% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}
+                    {{ mammotion_hot_weather_blade_height | int }}
+                  {% else %}
+                    {{ mammotion_blade_height | int }}
+                  {% endif %}
+              continue_on_error: true
+        - alias: "Set working speed before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = working_speed_number_entity | string | trim %}
+                {% set current = states(e) | float(none) if e | length > 0 else none %}
+                {% set desired = mammotion_working_speed | float %}
+                {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
+            sequence:
+            - service: number.set_value
+              target:
+                entity_id: "{{ working_speed_number_entity }}"
+              data:
+                value: "{{ mammotion_working_speed | float }}"
+              continue_on_error: true
+        - alias: "Set cutting path angle before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = cutting_path_angle_number_entity | string | trim %}
+                {% set current = states(e) | float(none) if e | length > 0 else none %}
+                {% set desired = mammotion_cutting_path_angle | float %}
+                {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
+            sequence:
+            - service: number.set_value
+              target:
+                entity_id: "{{ cutting_path_angle_number_entity }}"
+              data:
+                value: "{{ mammotion_cutting_path_angle | int }}"
+              continue_on_error: true
+        - alias: "Set crossing angle before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = crossing_angle_number_entity | string | trim %}
+                {% set current = states(e) | float(none) if e | length > 0 else none %}
+                {% set desired = mammotion_crossing_angle | float %}
+                {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
+            sequence:
+            - service: number.set_value
+              target:
+                entity_id: "{{ crossing_angle_number_entity }}"
+              data:
+                value: "{{ mammotion_crossing_angle | int }}"
+              continue_on_error: true
+        - alias: "Set path spacing before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = path_spacing_number_entity | string | trim %}
+                {% set current = states(e) | float(none) if e | length > 0 else none %}
+                {% set desired = mammotion_path_spacing | float %}
+                {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
+            sequence:
+            - service: number.set_value
+              target:
+                entity_id: "{{ path_spacing_number_entity }}"
+              data:
+                value: "{{ mammotion_path_spacing | int }}"
+              continue_on_error: true
+        - alias: "Set start progress before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = start_progress_number_entity | string | trim %}
+                {% set current = states(e) | float(none) if e | length > 0 else none %}
+                {% set desired = mammotion_start_progress | float %}
+                {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
+            sequence:
+            - service: number.set_value
+              target:
+                entity_id: "{{ start_progress_number_entity }}"
+              data:
+                value: "{{ mammotion_start_progress | int }}"
+              continue_on_error: true
+        - alias: "Set cutter speed before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = cutter_speed_select_entity | string | trim %}
+                {% set desired = cutter_speed_option | string %}
+                {{ e | length > 0 and states(e) | string != desired }}
+            sequence:
+            - service: select.select_option
+              target:
+                entity_id: "{{ cutter_speed_select_entity }}"
+              data:
+                option: "{{ cutter_speed_option }}"
+              continue_on_error: true
+        - alias: "Set cutting path mode before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = cutting_path_mode_select_entity | string | trim %}
+                {% set desired = cutting_path_mode_option | string %}
+                {{ e | length > 0 and states(e) | string != desired }}
+            sequence:
+            - service: select.select_option
+              target:
+                entity_id: "{{ cutting_path_mode_select_entity }}"
+              data:
+                option: "{{ cutting_path_mode_option }}"
+              continue_on_error: true
+        - alias: "Set cutting path angle mode before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = cutting_path_angle_mode_select_entity | string | trim %}
+                {% set desired = cutting_path_angle_mode_option | string %}
+                {{ e | length > 0 and states(e) | string != desired }}
+            sequence:
+            - service: select.select_option
+              target:
+                entity_id: "{{ cutting_path_angle_mode_select_entity }}"
+              data:
+                option: "{{ cutting_path_angle_mode_option }}"
+              continue_on_error: true
+        - alias: "Set mow order before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = mow_order_select_entity | string | trim %}
+                {% set desired = mow_order_option | string %}
+                {{ e | length > 0 and states(e) | string != desired }}
+            sequence:
+            - service: select.select_option
+              target:
+                entity_id: "{{ mow_order_select_entity }}"
+              data:
+                option: "{{ mow_order_option }}"
+              continue_on_error: true
+        - alias: "Set no-go zone laps before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = no_go_laps_select_entity | string | trim %}
+                {% set desired = no_go_laps_option | string %}
+                {{ e | length > 0 and states(e) | string != desired }}
+            sequence:
+            - service: select.select_option
+              target:
+                entity_id: "{{ no_go_laps_select_entity }}"
+              data:
+                option: "{{ no_go_laps_option }}"
+              continue_on_error: true
+        - alias: "Set obstacle avoidance before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = obstacle_avoidance_select_entity | string | trim %}
+                {% set desired = obstacle_avoidance_option | string %}
+                {{ e | length > 0 and states(e) | string != desired }}
+            sequence:
+            - service: select.select_option
+              target:
+                entity_id: "{{ obstacle_avoidance_select_entity }}"
+              data:
+                option: "{{ obstacle_avoidance_option }}"
+              continue_on_error: true
+        - alias: "Set perimeter laps before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = perimeter_laps_select_entity | string | trim %}
+                {% set desired = perimeter_laps_option | string %}
+                {{ e | length > 0 and states(e) | string != desired }}
+            sequence:
+            - service: select.select_option
+              target:
+                entity_id: "{{ perimeter_laps_select_entity }}"
+              data:
+                option: "{{ perimeter_laps_option }}"
+              continue_on_error: true
+        - alias: "Set traversal mode before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = traversal_mode_select_entity | string | trim %}
+                {% set desired = traversal_mode_option | string %}
+                {{ e | length > 0 and states(e) | string != desired }}
+            sequence:
+            - service: select.select_option
+              target:
+                entity_id: "{{ traversal_mode_select_entity }}"
+              data:
+                option: "{{ traversal_mode_option }}"
+              continue_on_error: true
+        - alias: "Set turnaround mode before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = turnaround_mode_select_entity | string | trim %}
+                {% set desired = turnaround_mode_option | string %}
+                {{ e | length > 0 and states(e) | string != desired }}
+            sequence:
+            - service: select.select_option
+              target:
+                entity_id: "{{ turnaround_mode_select_entity }}"
+              data:
+                option: "{{ turnaround_mode_option }}"
+              continue_on_error: true
+        - alias: "Set wildlife safety before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = wildlife_safety_select_entity | string | trim %}
+                {% set desired = wildlife_safety_option | string %}
+                {{
+                  not (wildlife_safety_sun_schedule_enabled | bool)
+                  and e | length > 0
+                  and states(e) | string != desired
+                }}
+            sequence:
+            - service: select.select_option
+              target:
+                entity_id: "{{ wildlife_safety_select_entity }}"
+              data:
+                option: "{{ wildlife_safety_option }}"
+              continue_on_error: true
+        - alias: "Ensure auto lighting/night light is on before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = night_light_switch_entity | string | trim %}
+                {{ e | length > 0 and not is_state(e, 'on') }}
+            sequence:
+            - service: switch.turn_on
+              target:
+                entity_id: "{{ night_light_switch_entity }}"
+              continue_on_error: true
+        - alias: "Ensure rain detection during mow is on before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = rain_detection_during_mow_switch_entity | string | trim %}
+                {{ e | length > 0 and not is_state(e, 'on') }}
+            sequence:
+            - service: switch.turn_on
+              target:
+                entity_id: "{{ rain_detection_during_mow_switch_entity }}"
+              continue_on_error: true
+        - alias: "Ensure mower rain detection is on before Zone B"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: >
+                {% set e = rain_detection_mower_switch_entity | string | trim %}
+                {{ e | length > 0 and not is_state(e, 'on') }}
+            sequence:
+            - service: switch.turn_on
+              target:
+                entity_id: "{{ rain_detection_mower_switch_entity }}"
+              continue_on_error: true
+        - alias: "Start mowing Zone B"
+          service: lawn_mower.start_mowing
+          target:
+            entity_id: !input mower_entity
 
-  - alias: "One-time pause recovery after Zone A start"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ post_start_pause_resume_window | int > 0 }}"
-        sequence:
-          - wait_for_trigger:
+        - alias: "One-time pause recovery after Zone B start"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: "{{ post_start_pause_resume_window | int > 0 }}"
+            sequence:
+            - wait_for_trigger:
               - platform: state
                 entity_id: !input mower_entity
                 to: "paused"
@@ -2011,743 +2624,140 @@ action:
               - platform: state
                 entity_id: !input weather_entity
                 to:
-                  - "rainy"
-                  - "pouring"
-                  - "lightning-rainy"
-                  - "hail"
-                  - "snowy-rainy"
-                  - "exceptional"
+                - "rainy"
+                - "pouring"
+                - "lightning-rainy"
+                - "hail"
+                - "snowy-rainy"
+                - "exceptional"
                 id: rain
-            timeout:
-              seconds: "{{ post_start_pause_resume_window | int }}"
-            continue_on_timeout: true
-          - choose:
+              timeout:
+                seconds: "{{ post_start_pause_resume_window | int }}"
+              continue_on_timeout: true
+            - choose:
               - conditions:
-                  - condition: template
-                    value_template: "{{ wait.trigger is not none and wait.trigger.id == 'post_start_paused' }}"
+                - condition: template
+                  value_template: "{{ wait.trigger is not none and wait.trigger.id == 'post_start_paused' }}"
                 sequence:
-                  - service: lawn_mower.start_mowing
-                    target:
-                      entity_id: !input mower_entity
-                    continue_on_error: true
-                  - service: notify.persistent_notification
-                    data:
-                      title: "▶️ {{ mower_display_name }} fortgesetzt — Zone A"
-                      message: >
-                        Der Mäher hat kurz nach dem Start von {{ zone_a_name }} pausiert.
-                        Ein einmaliger Fortsetzen-Befehl wurde gesendet.
+                - service: lawn_mower.start_mowing
+                  target:
+                    entity_id: !input mower_entity
+                  continue_on_error: true
+                - service: notify.persistent_notification
+                  data:
+                    title: "▶️ {{ mower_display_name }} fortgesetzt — Zone B"
+                    message: >
+                      Der Mäher hat kurz nach dem Start von {{ zone_b_name }} pausiert.
+                      Ein einmaliger Fortsetzen-Befehl wurde gesendet.
               - conditions:
-                  - condition: template
-                    value_template: "{{ wait.trigger is not none and wait.trigger.id == 'rain' }}"
+                - condition: template
+                  value_template: "{{ wait.trigger is not none and wait.trigger.id == 'rain' }}"
                 sequence:
-                  - service: lawn_mower.dock
-                    target:
-                      entity_id: !input mower_entity
-                  - service: input_datetime.set_datetime
-                    target:
-                      entity_id: !input rain_last_seen
-                    data:
-                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
-                  - service: notify.persistent_notification
-                    data:
-                      title: "🌧️ {{ mower_display_name }} während Zone-A-Start zurückgerufen"
-                      message: >
-                        Während des Starts von {{ zone_a_name }} wurde Regen erkannt.
-                        Der Mäher wurde zur Ladestation geschickt und der Zonenzähler wurde nicht weitergesetzt.
-                  - stop: "Regen während des Start-/Wiederaufnahmefensters erkannt"
+                - service: lawn_mower.dock
+                  target:
+                    entity_id: !input mower_entity
+                - service: input_datetime.set_datetime
+                  target:
+                    entity_id: !input rain_last_seen
+                  data:
+                    datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+                - service: notify.persistent_notification
+                  data:
+                    title: "🌧️ {{ mower_display_name }} während Zone-B-Start zurückgerufen"
+                    message: >
+                      Während des Starts von {{ zone_b_name }} wurde Regen erkannt.
+                      Der Mäher wurde zur Ladestation geschickt und der Zonenzähler wurde nicht weitergesetzt.
+                - stop: "Regen während des Start-/Wiederaufnahmefensters erkannt"
 
-  - alias: "Wait for Zone A to complete, timeout, or rain to interrupt"
-    wait_for_trigger:
-      - platform: state
-        entity_id: !input weather_entity
-        to:
-          - "rainy"
-          - "pouring"
-          - "lightning-rainy"
-          - "hail"
-          - "snowy-rainy"
-          - "exceptional"
-        id: rain
-      - platform: template
-        id: complete
-        value_template: >
-          {% set progress_entity = mower_progress_sensor | string | trim %}
-          {% set time_left_entity = mower_time_left_sensor | string | trim %}
-          {% set task_entity = mower_task_status_sensor | string | trim %}
-          {% set activity_entity = mower_activity_mode_sensor | string | trim %}
-          {% set progress = states(progress_entity) | float(-1) if progress_entity | length > 0 else -1 %}
-          {% set time_left = states(time_left_entity) | float(999) if time_left_entity | length > 0 else 999 %}
-          {% set task = states(task_entity) | upper if task_entity | length > 0 else '' %}
-          {% set activity = states(activity_entity) | upper if activity_entity | length > 0 else '' %}
-          {% set mower = states(mower_entity) | lower %}
-          {{
-            task == 'COMPLETE'
-            or (
-              time_left <= 0
-              and progress >= 99
-              and activity not in ['MODE_WORKING', 'MODE_MOWING']
-            )
-            or (
-              mower in ['docked', 'idle']
-              and progress >= 99
-              and time_left <= 0
-            )
-          }}
-    timeout:
-      minutes: "{{ zone_duration | int }}"
-    continue_on_timeout: true
+        - alias: "Wait for Zone B to complete, timeout, or rain to interrupt"
+          wait_for_trigger:
+          - platform: state
+            entity_id: !input weather_entity
+            to:
+            - "rainy"
+            - "pouring"
+            - "lightning-rainy"
+            - "hail"
+            - "snowy-rainy"
+            - "exceptional"
+            id: rain
+          - platform: template
+            id: complete
+            value_template: >
+              {% set progress_entity = mower_progress_sensor | string | trim %}
+              {% set time_left_entity = mower_time_left_sensor | string | trim %}
+              {% set task_entity = mower_task_status_sensor | string | trim %}
+              {% set activity_entity = mower_activity_mode_sensor | string | trim %}
+              {% set progress = states(progress_entity) | float(-1) if progress_entity | length > 0 else -1 %}
+              {% set time_left = states(time_left_entity) | float(999) if time_left_entity | length > 0 else 999 %}
+              {% set task = states(task_entity) | upper if task_entity | length > 0 else '' %}
+              {% set activity = states(activity_entity) | upper if activity_entity | length > 0 else '' %}
+              {% set mower = states(mower_entity) | lower %}
+              {{
+                task == 'COMPLETE'
+                or (
+                  time_left <= 0
+                  and progress >= 99
+                  and activity not in ['MODE_WORKING', 'MODE_MOWING']
+                )
+                or (
+                  mower in ['docked', 'idle']
+                  and progress >= 99
+                  and time_left <= 0
+                )
+              }}
+          timeout:
+            minutes: "{{ zone_duration | int }}"
+          continue_on_timeout: true
 
-  - alias: "Three-minute grace period after Zone A completion signal"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ wait.trigger is not none and wait.trigger.id == 'complete' }}"
-        sequence:
-          - delay:
-              minutes: 3
+        - alias: "Three-minute grace period after Zone B completion signal"
+          choose:
+          - conditions:
+            - condition: template
+              value_template: "{{ wait.trigger is not none and wait.trigger.id == 'complete' }}"
+            sequence:
+            - delay:
+                minutes: 3
 
-  - alias: "Return mower to dock after Zone A"
-    service: lawn_mower.dock
-    target:
-      entity_id: !input mower_entity
+        - alias: "Return mower to dock after Zone B"
+          service: lawn_mower.dock
+          target:
+            entity_id: !input mower_entity
 
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ wait.trigger is none or wait.trigger.id == 'complete' }}"
-        sequence:
-          - service: input_number.set_value
-            target:
-              entity_id: !input zone_tracker
-            data:
-              value: "{{ zone_a | int }}"
-          - service: input_datetime.set_datetime
-            target:
-              entity_id: !input last_run_tracker
-            data:
-              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
-          - service: notify.persistent_notification
-            data:
-              title: "✅ {{ mower_display_name }} abgeschlossen — {{ zone_a_name }}"
-              message: >
-                Zone {{ zone_a }} ({{ zone_a_name }}) wurde abgeschlossen.
-                Zonenzähler wurde auf {{ zone_a }} weitergesetzt.
-      - conditions:
-          - condition: template
-            value_template: "{{ wait.trigger is not none and wait.trigger.id == 'rain' }}"
-        sequence:
-          - service: input_datetime.set_datetime
-            target:
-              entity_id: !input rain_last_seen
-            data:
-              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
-          - service: notify.persistent_notification
-            data:
-              title: "🌧️ {{ mower_display_name }} während des Mähens zurückgerufen — Zone A"
-              message: >
-                Während des Mähens von {{ zone_a_name }} wurde Regen erkannt. Der Mäher wurde zur Ladestation geschickt.
-                Zonenzähler bleibt bei {{ current_zone }}.
-                Trocknungszeit nach Regen: {{ wet_lawn_dry_out_delay_hours }} Stunden.
-
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ effective_zones_per_session | int >= 2 }}"
-        sequence:
-          - alias: "Rest period between Zone A and Zone B"
-            delay:
-              minutes: "{{ inter_zone_rest | int }}"
-
-          - choose:
-              - conditions:
-                  - condition: template
-                    alias: "Skip Zone B if garden is currently in use"
-                    value_template: >
-                      {% set e = garden_in_use_toggle | string | trim %}
-                      {{ e | length > 0 and is_state(e, 'on') }}
-                sequence:
-                  - service: notify.persistent_notification
-                    data:
-                      title: "🏡 {{ mower_display_name }} Zone B übersprungen — Garten wird genutzt"
-                      message: >
-                        Zone B wurde vor dem Start von {{ zone_b_name }} übersprungen,
-                        weil der Sperrschalter "Garten wird genutzt" aktiv ist.
-
-                        Der Zonenzähler bleibt bei {{ zone_a }}.
-                  - stop: "Garten wird genutzt — Zone B übersprungen"
-
-          - choose:
-              - conditions:
-                  - condition: template
-                    alias: "Skip Zone B if rain is detected before start"
-                    value_template: >
-                      {{ states(weather_entity) in ['rainy', 'pouring', 'lightning-rainy', 'hail', 'snowy-rainy', 'exceptional'] }}
-                sequence:
-                  - service: input_datetime.set_datetime
-                    target:
-                      entity_id: !input rain_last_seen
-                    data:
-                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
-                  - service: notify.persistent_notification
-                    data:
-                      title: "🌧️ {{ mower_display_name }} Zone B übersprungen — Regen"
-                      message: >
-                        Vor Zone B wurde Regen erkannt. {{ zone_b_name }} wird übersprungen.
-                        Wettervorhersage: {{ states(weather_entity) }}.
-                        Zonenzähler bleibt bei {{ zone_a }}.
-                        Trocknungszeit nach Regen: {{ wet_lawn_dry_out_delay_hours }} Stunden.
-                  - stop: "Regen vor Zone B erkannt"
-
-          - choose:
-              - conditions:
-                  - condition: template
-                    alias: "Skip Zone B if current temperature is too high before start"
-                    value_template: >
-                      {% set temp_entity = temperature_sensor | string | trim %}
-                      {% if temp_entity | length == 0 %}
-                        false
-                      {% else %}
-                        {% set temp = states(temp_entity) | float(none) %}
-                        {{ temp is none or temp >= (max_start_temperature | float) }}
-                      {% endif %}
-                sequence:
-                  - service: notify.persistent_notification
-                    data:
-                      title: "🌡️ {{ mower_display_name }} Zone B übersprungen — Temperatur"
-                      message: >
-                        Zone B wurde vor dem Start von {{ zone_b_name }} übersprungen.
-
-                        Aktuelle Temperatur:
-                        {{ states(temperature_sensor) if temperature_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} °C.
-
-                        Der Mähvorgang startet nur unterhalb von {{ max_start_temperature }} °C.
-                        Zonenzähler bleibt bei {{ zone_a }}.
-                  - stop: "Temperatur vor Zone B zu hoch oder nicht verfügbar"
-
-          - choose:
-              - conditions:
-                  - condition: template
-                    alias: "Skip Zone B if battery level is too low before start"
-                    value_template: >
-                      {% set battery_entity = mower_battery_level_sensor | string | trim %}
-                      {% if battery_entity | length == 0 %}
-                        false
-                      {% else %}
-                        {% set battery = states(battery_entity) | float(none) %}
-                        {{ battery is none or battery < (minimum_battery_before_start | float) }}
-                      {% endif %}
-                sequence:
-                  - service: notify.persistent_notification
-                    data:
-                      title: "🔋 {{ mower_display_name }} Zone B übersprungen — Akkustand"
-                      message: >
-                        Zone B wurde vor dem Start von {{ zone_b_name }} übersprungen.
-
-                        Aktueller Akkustand:
-                        {{ states(mower_battery_level_sensor) if mower_battery_level_sensor | string | trim | length > 0 else 'nicht konfiguriert' }} %.
-
-                        Erforderlich sind mindestens {{ minimum_battery_before_start }} %.
-                        Zonenzähler bleibt bei {{ zone_a }}.
-                  - stop: "Akkustand vor Zone B zu niedrig oder nicht verfügbar"
-
-          - choose:
-              - conditions:
-                  - condition: template
-                    alias: "Skip Zone B if mower state is not allowed before start"
-                    value_template: >
-                      {% set allowed = allowed_mower_states_before_start if allowed_mower_states_before_start is iterable and allowed_mower_states_before_start is not string else [] %}
-                      {% set mower_state = states(mower_entity) | lower %}
-                      {{
-                        mower_start_state_check_enabled | bool
-                        and (allowed | list | count > 0)
-                        and mower_state not in allowed
-                      }}
-                sequence:
-                  - service: notify.persistent_notification
-                    data:
-                      title: "🤖 {{ mower_display_name }} Zone B übersprungen — Mäherstatus"
-                      message: >
-                        Zone B wurde vor dem Start von {{ zone_b_name }} übersprungen.
-
-                        Aktueller Mäherstatus: {{ states(mower_entity) }}.
-                        Erlaubte Statuswerte vor dem Start:
-                        {{ allowed_mower_states_before_start | join(', ') }}.
-
-                        Zonenzähler bleibt bei {{ zone_a }}.
-                  - stop: "Mäherstatus vor Zone B nicht erlaubt"
-
-          - choose:
-              - conditions:
-                  - condition: template
-                    alias: "Still clear to mow Zone B"
-                    value_template: "true"
-                sequence:
-                  - alias: "Turn off all active area switches before Zone B"
-                    service: switch.turn_off
-                    target:
-                      entity_id: >
-                        {{ [sw1, sw2, sw3, sw4, sw5, sw6][:zone_mod | int(6)] | reject('eq', '') | list }}
-                  - delay:
-                      seconds: 6
-                  - alias: "Enable only Zone B switch"
-                    service: switch.turn_on
-                    target:
-                      entity_id: "{{ zone_b_switch }}"
-                  - delay:
-                      seconds: 9
-                  # ── Apply Mammotion integration settings before Zone B only if needed ────────────
-                  - alias: "Set blade height before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = blade_height_number_entity | string | trim %}
-                              {% set current = states(e) | float(none) if e | length > 0 else none %}
-                              {% set temp_entity = temperature_sensor | string | trim %}
-                              {% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}
-                              {% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}
-                                {% set desired = mammotion_hot_weather_blade_height | float %}
-                              {% else %}
-                                {% set desired = mammotion_blade_height | float %}
-                              {% endif %}
-                              {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
-                        sequence:
-                          - service: number.set_value
-                            target:
-                              entity_id: "{{ blade_height_number_entity }}"
-                            data:
-                              value: >
-                                {% set temp_entity = temperature_sensor | string | trim %}
-                                {% set temp = states(temp_entity) | float(none) if temp_entity | length > 0 else none %}
-                                {% if hot_weather_blade_height_enabled | bool and temp is not none and temp >= (hot_weather_blade_height_temperature | float) %}
-                                  {{ mammotion_hot_weather_blade_height | int }}
-                                {% else %}
-                                  {{ mammotion_blade_height | int }}
-                                {% endif %}
-                            continue_on_error: true
-                  - alias: "Set working speed before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = working_speed_number_entity | string | trim %}
-                              {% set current = states(e) | float(none) if e | length > 0 else none %}
-                              {% set desired = mammotion_working_speed | float %}
-                              {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
-                        sequence:
-                          - service: number.set_value
-                            target:
-                              entity_id: "{{ working_speed_number_entity }}"
-                            data:
-                              value: "{{ mammotion_working_speed | float }}"
-                            continue_on_error: true
-                  - alias: "Set cutting path angle before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = cutting_path_angle_number_entity | string | trim %}
-                              {% set current = states(e) | float(none) if e | length > 0 else none %}
-                              {% set desired = mammotion_cutting_path_angle | float %}
-                              {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
-                        sequence:
-                          - service: number.set_value
-                            target:
-                              entity_id: "{{ cutting_path_angle_number_entity }}"
-                            data:
-                              value: "{{ mammotion_cutting_path_angle | int }}"
-                            continue_on_error: true
-                  - alias: "Set crossing angle before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = crossing_angle_number_entity | string | trim %}
-                              {% set current = states(e) | float(none) if e | length > 0 else none %}
-                              {% set desired = mammotion_crossing_angle | float %}
-                              {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
-                        sequence:
-                          - service: number.set_value
-                            target:
-                              entity_id: "{{ crossing_angle_number_entity }}"
-                            data:
-                              value: "{{ mammotion_crossing_angle | int }}"
-                            continue_on_error: true
-                  - alias: "Set path spacing before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = path_spacing_number_entity | string | trim %}
-                              {% set current = states(e) | float(none) if e | length > 0 else none %}
-                              {% set desired = mammotion_path_spacing | float %}
-                              {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
-                        sequence:
-                          - service: number.set_value
-                            target:
-                              entity_id: "{{ path_spacing_number_entity }}"
-                            data:
-                              value: "{{ mammotion_path_spacing | int }}"
-                            continue_on_error: true
-                  - alias: "Set start progress before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = start_progress_number_entity | string | trim %}
-                              {% set current = states(e) | float(none) if e | length > 0 else none %}
-                              {% set desired = mammotion_start_progress | float %}
-                              {{ e | length > 0 and (current is none or (current - desired) | abs > 0.001) }}
-                        sequence:
-                          - service: number.set_value
-                            target:
-                              entity_id: "{{ start_progress_number_entity }}"
-                            data:
-                              value: "{{ mammotion_start_progress | int }}"
-                            continue_on_error: true
-                  - alias: "Set cutter speed before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = cutter_speed_select_entity | string | trim %}
-                              {% set desired = cutter_speed_option | string %}
-                              {{ e | length > 0 and states(e) | string != desired }}
-                        sequence:
-                          - service: select.select_option
-                            target:
-                              entity_id: "{{ cutter_speed_select_entity }}"
-                            data:
-                              option: "{{ cutter_speed_option }}"
-                            continue_on_error: true
-                  - alias: "Set cutting path mode before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = cutting_path_mode_select_entity | string | trim %}
-                              {% set desired = cutting_path_mode_option | string %}
-                              {{ e | length > 0 and states(e) | string != desired }}
-                        sequence:
-                          - service: select.select_option
-                            target:
-                              entity_id: "{{ cutting_path_mode_select_entity }}"
-                            data:
-                              option: "{{ cutting_path_mode_option }}"
-                            continue_on_error: true
-                  - alias: "Set cutting path angle mode before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = cutting_path_angle_mode_select_entity | string | trim %}
-                              {% set desired = cutting_path_angle_mode_option | string %}
-                              {{ e | length > 0 and states(e) | string != desired }}
-                        sequence:
-                          - service: select.select_option
-                            target:
-                              entity_id: "{{ cutting_path_angle_mode_select_entity }}"
-                            data:
-                              option: "{{ cutting_path_angle_mode_option }}"
-                            continue_on_error: true
-                  - alias: "Set mow order before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = mow_order_select_entity | string | trim %}
-                              {% set desired = mow_order_option | string %}
-                              {{ e | length > 0 and states(e) | string != desired }}
-                        sequence:
-                          - service: select.select_option
-                            target:
-                              entity_id: "{{ mow_order_select_entity }}"
-                            data:
-                              option: "{{ mow_order_option }}"
-                            continue_on_error: true
-                  - alias: "Set no-go zone laps before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = no_go_laps_select_entity | string | trim %}
-                              {% set desired = no_go_laps_option | string %}
-                              {{ e | length > 0 and states(e) | string != desired }}
-                        sequence:
-                          - service: select.select_option
-                            target:
-                              entity_id: "{{ no_go_laps_select_entity }}"
-                            data:
-                              option: "{{ no_go_laps_option }}"
-                            continue_on_error: true
-                  - alias: "Set obstacle avoidance before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = obstacle_avoidance_select_entity | string | trim %}
-                              {% set desired = obstacle_avoidance_option | string %}
-                              {{ e | length > 0 and states(e) | string != desired }}
-                        sequence:
-                          - service: select.select_option
-                            target:
-                              entity_id: "{{ obstacle_avoidance_select_entity }}"
-                            data:
-                              option: "{{ obstacle_avoidance_option }}"
-                            continue_on_error: true
-                  - alias: "Set perimeter laps before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = perimeter_laps_select_entity | string | trim %}
-                              {% set desired = perimeter_laps_option | string %}
-                              {{ e | length > 0 and states(e) | string != desired }}
-                        sequence:
-                          - service: select.select_option
-                            target:
-                              entity_id: "{{ perimeter_laps_select_entity }}"
-                            data:
-                              option: "{{ perimeter_laps_option }}"
-                            continue_on_error: true
-                  - alias: "Set traversal mode before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = traversal_mode_select_entity | string | trim %}
-                              {% set desired = traversal_mode_option | string %}
-                              {{ e | length > 0 and states(e) | string != desired }}
-                        sequence:
-                          - service: select.select_option
-                            target:
-                              entity_id: "{{ traversal_mode_select_entity }}"
-                            data:
-                              option: "{{ traversal_mode_option }}"
-                            continue_on_error: true
-                  - alias: "Set turnaround mode before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = turnaround_mode_select_entity | string | trim %}
-                              {% set desired = turnaround_mode_option | string %}
-                              {{ e | length > 0 and states(e) | string != desired }}
-                        sequence:
-                          - service: select.select_option
-                            target:
-                              entity_id: "{{ turnaround_mode_select_entity }}"
-                            data:
-                              option: "{{ turnaround_mode_option }}"
-                            continue_on_error: true
-                  - alias: "Set wildlife safety before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = wildlife_safety_select_entity | string | trim %}
-                              {% set desired = wildlife_safety_option | string %}
-                              {{
-                                not (wildlife_safety_sun_schedule_enabled | bool)
-                                and e | length > 0
-                                and states(e) | string != desired
-                              }}
-                        sequence:
-                          - service: select.select_option
-                            target:
-                              entity_id: "{{ wildlife_safety_select_entity }}"
-                            data:
-                              option: "{{ wildlife_safety_option }}"
-                            continue_on_error: true
-                  - alias: "Ensure auto lighting/night light is on before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = night_light_switch_entity | string | trim %}
-                              {{ e | length > 0 and not is_state(e, 'on') }}
-                        sequence:
-                          - service: switch.turn_on
-                            target:
-                              entity_id: "{{ night_light_switch_entity }}"
-                            continue_on_error: true
-                  - alias: "Ensure rain detection during mow is on before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = rain_detection_during_mow_switch_entity | string | trim %}
-                              {{ e | length > 0 and not is_state(e, 'on') }}
-                        sequence:
-                          - service: switch.turn_on
-                            target:
-                              entity_id: "{{ rain_detection_during_mow_switch_entity }}"
-                            continue_on_error: true
-                  - alias: "Ensure mower rain detection is on before Zone B"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {% set e = rain_detection_mower_switch_entity | string | trim %}
-                              {{ e | length > 0 and not is_state(e, 'on') }}
-                        sequence:
-                          - service: switch.turn_on
-                            target:
-                              entity_id: "{{ rain_detection_mower_switch_entity }}"
-                            continue_on_error: true
-                  - alias: "Start mowing Zone B"
-                    service: lawn_mower.start_mowing
-                    target:
-                      entity_id: !input mower_entity
-
-                  - alias: "One-time pause recovery after Zone B start"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: "{{ post_start_pause_resume_window | int > 0 }}"
-                        sequence:
-                          - wait_for_trigger:
-                              - platform: state
-                                entity_id: !input mower_entity
-                                to: "paused"
-                                id: post_start_paused
-                              - platform: state
-                                entity_id: !input weather_entity
-                                to:
-                                  - "rainy"
-                                  - "pouring"
-                                  - "lightning-rainy"
-                                  - "hail"
-                                  - "snowy-rainy"
-                                  - "exceptional"
-                                id: rain
-                            timeout:
-                              seconds: "{{ post_start_pause_resume_window | int }}"
-                            continue_on_timeout: true
-                          - choose:
-                              - conditions:
-                                  - condition: template
-                                    value_template: "{{ wait.trigger is not none and wait.trigger.id == 'post_start_paused' }}"
-                                sequence:
-                                  - service: lawn_mower.start_mowing
-                                    target:
-                                      entity_id: !input mower_entity
-                                    continue_on_error: true
-                                  - service: notify.persistent_notification
-                                    data:
-                                      title: "▶️ {{ mower_display_name }} fortgesetzt — Zone B"
-                                      message: >
-                                        Der Mäher hat kurz nach dem Start von {{ zone_b_name }} pausiert.
-                                        Ein einmaliger Fortsetzen-Befehl wurde gesendet.
-                              - conditions:
-                                  - condition: template
-                                    value_template: "{{ wait.trigger is not none and wait.trigger.id == 'rain' }}"
-                                sequence:
-                                  - service: lawn_mower.dock
-                                    target:
-                                      entity_id: !input mower_entity
-                                  - service: input_datetime.set_datetime
-                                    target:
-                                      entity_id: !input rain_last_seen
-                                    data:
-                                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
-                                  - service: notify.persistent_notification
-                                    data:
-                                      title: "🌧️ {{ mower_display_name }} während Zone-B-Start zurückgerufen"
-                                      message: >
-                                        Während des Starts von {{ zone_b_name }} wurde Regen erkannt.
-                                        Der Mäher wurde zur Ladestation geschickt und der Zonenzähler wurde nicht weitergesetzt.
-                                  - stop: "Regen während des Start-/Wiederaufnahmefensters erkannt"
-
-                  - alias: "Wait for Zone B to complete, timeout, or rain to interrupt"
-                    wait_for_trigger:
-                      - platform: state
-                        entity_id: !input weather_entity
-                        to:
-                          - "rainy"
-                          - "pouring"
-                          - "lightning-rainy"
-                          - "hail"
-                          - "snowy-rainy"
-                          - "exceptional"
-                        id: rain
-                      - platform: template
-                        id: complete
-                        value_template: >
-                          {% set progress_entity = mower_progress_sensor | string | trim %}
-                          {% set time_left_entity = mower_time_left_sensor | string | trim %}
-                          {% set task_entity = mower_task_status_sensor | string | trim %}
-                          {% set activity_entity = mower_activity_mode_sensor | string | trim %}
-                          {% set progress = states(progress_entity) | float(-1) if progress_entity | length > 0 else -1 %}
-                          {% set time_left = states(time_left_entity) | float(999) if time_left_entity | length > 0 else 999 %}
-                          {% set task = states(task_entity) | upper if task_entity | length > 0 else '' %}
-                          {% set activity = states(activity_entity) | upper if activity_entity | length > 0 else '' %}
-                          {% set mower = states(mower_entity) | lower %}
-                          {{
-                            task == 'COMPLETE'
-                            or (
-                              time_left <= 0
-                              and progress >= 99
-                              and activity not in ['MODE_WORKING', 'MODE_MOWING']
-                            )
-                            or (
-                              mower in ['docked', 'idle']
-                              and progress >= 99
-                              and time_left <= 0
-                            )
-                          }}
-                    timeout:
-                      minutes: "{{ zone_duration | int }}"
-                    continue_on_timeout: true
-
-                  - alias: "Three-minute grace period after Zone B completion signal"
-                    choose:
-                      - conditions:
-                          - condition: template
-                            value_template: "{{ wait.trigger is not none and wait.trigger.id == 'complete' }}"
-                        sequence:
-                          - delay:
-                              minutes: 3
-
-                  - alias: "Return mower to dock after Zone B"
-                    service: lawn_mower.dock
-                    target:
-                      entity_id: !input mower_entity
-
-                  - choose:
-                      - conditions:
-                          - condition: template
-                            value_template: "{{ wait.trigger is none or wait.trigger.id == 'complete' }}"
-                        sequence:
-                          - service: input_number.set_value
-                            target:
-                              entity_id: !input zone_tracker
-                            data:
-                              value: "{{ zone_b | int }}"
-                          - service: input_datetime.set_datetime
-                            target:
-                              entity_id: !input last_run_tracker
-                            data:
-                              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
-                          - service: notify.persistent_notification
-                            data:
-                              title: "✅ {{ mower_display_name }} abgeschlossen — {{ zone_b_name }}"
-                              message: >
-                                Zone {{ zone_b }} ({{ zone_b_name }}) wurde abgeschlossen.
-                                Zonenzähler wurde auf {{ zone_b }} weitergesetzt.
-                      - conditions:
-                          - condition: template
-                            value_template: "{{ wait.trigger is not none and wait.trigger.id == 'rain' }}"
-                        sequence:
-                          - service: input_datetime.set_datetime
-                            target:
-                              entity_id: !input rain_last_seen
-                            data:
-                              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
-                          - service: notify.persistent_notification
-                            data:
-                              title: "🌧️ {{ mower_display_name }} während des Mähens zurückgerufen — Zone B"
-                              message: >
-                                Während des Mähens von {{ zone_b_name }} wurde Regen erkannt. Der Mäher wurde zur Ladestation geschickt.
-                                Zonenzähler bleibt bei {{ zone_a }}.
-                                Trocknungszeit nach Regen: {{ wet_lawn_dry_out_delay_hours }} Stunden.
+        - choose:
+          - conditions:
+            - condition: template
+              value_template: "{{ wait.trigger is none or wait.trigger.id == 'complete' }}"
+            sequence:
+            - service: input_number.set_value
+              target:
+                entity_id: !input zone_tracker
+              data:
+                value: "{{ zone_b | int }}"
+            - service: input_datetime.set_datetime
+              target:
+                entity_id: !input last_run_tracker
+              data:
+                datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+            - service: notify.persistent_notification
+              data:
+                title: "✅ {{ mower_display_name }} abgeschlossen — {{ zone_b_name }}"
+                message: >
+                  Zone {{ zone_b }} ({{ zone_b_name }}) wurde abgeschlossen.
+                  Zonenzähler wurde auf {{ zone_b }} weitergesetzt.
+          - conditions:
+            - condition: template
+              value_template: "{{ wait.trigger is not none and wait.trigger.id == 'rain' }}"
+            sequence:
+            - service: input_datetime.set_datetime
+              target:
+                entity_id: !input rain_last_seen
+              data:
+                datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+            - service: notify.persistent_notification
+              data:
+                title: "🌧️ {{ mower_display_name }} während des Mähens zurückgerufen — Zone B"
+                message: >
+                  Während des Mähens von {{ zone_b_name }} wurde Regen erkannt. Der Mäher wurde zur Ladestation geschickt.
+                  Zonenzähler bleibt bei {{ zone_a }}.
+                  Trocknungszeit nach Regen: {{ wet_lawn_dry_out_delay_hours }} Stunden.
